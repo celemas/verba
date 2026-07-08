@@ -17,6 +17,18 @@ use SplFileInfo;
  */
 abstract class FileScanner implements Scanner
 {
+	/**
+	 * Call name => [domain arg index or null, id arg index, plural arg index or null].
+	 *
+	 * @var array<string, array{?int, int, ?int}>
+	 */
+	protected const array CALLS = [
+		'__' => [null, 0, null],
+		'__n' => [null, 0, 1],
+		'__d' => [0, 1, null],
+		'__dn' => [0, 1, 2],
+	];
+
 	/** @var list<Message> */
 	protected array $messages = [];
 
@@ -57,6 +69,51 @@ abstract class FileScanner implements Scanner
 	abstract protected function extensions(): array;
 
 	abstract protected function scanCode(string $code, string $file): void;
+
+	/**
+	 * Records a discovered call, or a warning when its id, domain, or plural was
+	 * not a literal string.
+	 *
+	 * @param list<?string> $args
+	 */
+	protected function emit(string $name, array $args, string $location): void
+	{
+		[$domainIndex, $idIndex, $pluralIndex] = self::CALLS[$name];
+
+		$id = $args[$idIndex] ?? null;
+
+		if ($id === null) {
+			$this->warnings[] = "Non-literal message id in {$name}() at {$location}";
+
+			return;
+		}
+
+		$domain = null;
+
+		if ($domainIndex !== null) {
+			$domain = $args[$domainIndex] ?? null;
+
+			if ($domain === null) {
+				$this->warnings[] = "Non-literal domain in {$name}() at {$location}";
+
+				return;
+			}
+		}
+
+		$plural = null;
+
+		if ($pluralIndex !== null) {
+			$plural = $args[$pluralIndex] ?? null;
+
+			if ($plural === null) {
+				$this->warnings[] = "Non-literal plural in {$name}() at {$location}";
+
+				return;
+			}
+		}
+
+		$this->messages[] = new Message($domain, $id, $plural, [$location]);
+	}
 
 	/**
 	 * @return list<string>

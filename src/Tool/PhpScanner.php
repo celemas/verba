@@ -16,18 +16,6 @@ use PhpToken;
  */
 final class PhpScanner extends FileScanner
 {
-	/**
-	 * Call name => [domain arg index or null, id arg index, plural arg index or null].
-	 *
-	 * @var array<string, array{?int, int, ?int}>
-	 */
-	private const CALLS = [
-		'__' => [null, 0, null],
-		'__n' => [null, 0, 1],
-		'__d' => [0, 1, null],
-		'__dn' => [0, 1, 2],
-	];
-
 	#[\Override]
 	protected function extensions(): array
 	{
@@ -170,47 +158,5 @@ final class PhpScanner extends FileScanner
 		}
 
 		return stripcslashes($inner);
-	}
-
-	/**
-	 * @param list<?string> $args
-	 */
-	private function emit(string $name, array $args, string $location): void
-	{
-		[$domainIndex, $idIndex, $pluralIndex] = self::CALLS[$name];
-
-		$id = $args[$idIndex] ?? null;
-
-		if ($id === null) {
-			$this->warnings[] = "Non-literal message id in {$name}() at {$location}";
-
-			return;
-		}
-
-		$domain = null;
-
-		if ($domainIndex !== null) {
-			$domain = $args[$domainIndex] ?? null;
-
-			if ($domain === null) {
-				$this->warnings[] = "Non-literal domain in {$name}() at {$location}";
-
-				return;
-			}
-		}
-
-		$plural = null;
-
-		if ($pluralIndex !== null) {
-			$plural = $args[$pluralIndex] ?? null;
-
-			if ($plural === null) {
-				$this->warnings[] = "Non-literal plural in {$name}() at {$location}";
-
-				return;
-			}
-		}
-
-		$this->messages[] = new Message($domain, $id, $plural, [$location]);
 	}
 }

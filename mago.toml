@@ -22,6 +22,7 @@ integrations = []
 [linter.rules]
 function-name = { enabled = false }
 cyclomatic-complexity = { enabled = false }
+kan-defect = { enabled = false }
 literal-named-argument = { enabled = false }
 no-assign-in-condition = { enabled = false }
 no-else-clause = { enabled = false }

@@ -1,0 +1,358 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Celemas\Verba\Tool;
+
+/**
+ * Extracts `__`, `__n`, `__d`, and `__dn` calls from frontend source across a
+ * range of dialects — `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue` — with
+ * one shared character lexer that skips strings, template literals, and
+ * comments. Only literal string arguments are captured.
+ *
+ * The JS dialects and `.svelte` are lexed whole (quoted strings are skipped, so
+ * a literal attribute like `title="Delete"` is not mistaken for a call). In
+ * `.vue`, `<script>` blocks are lexed the same way while the template treats
+ * quoted attribute values as expression context, so `:title="__('Save')"` is
+ * found. HTML comments are always skipped. Calls inside template-literal
+ * interpolations are not extracted.
+ *
+ * @api
+ */
+final class FrontendScanner extends FileScanner
+{
+	#[\Override]
+	protected function extensions(): array
+	{
+		return ['js', 'ts', 'jsx', 'tsx', 'svelte', 'vue'];
+	}
+
+	#[\Override]
+	protected function scanCode(string $code, string $file): void
+	{
+		if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'vue') {
+			$this->scanVue($code, $file);
+
+			return;
+		}
+
+		$this->collect($code, $file, 0, false);
+	}
+
+	private function scanVue(string $code, string $file): void
+	{
+		$offset = 0;
+		preg_match_all(
+			'#<script\b[^>]*>(.*?)</script>#is',
+			$code,
+			$matches,
+			PREG_OFFSET_CAPTURE | PREG_SET_ORDER,
+		);
+
+		foreach ($matches as $match) {
+			$whole = $match[0][0];
+			$start = $match[0][1];
+			$inner = $match[1][0];
+			$innerStart = $match[1][1];
+
+			$this->collect(
+				substr($code, $offset, $start - $offset),
+				$file,
+				$this->lineAt($code, $offset),
+				true,
+			);
+			$this->collect($inner, $file, $this->lineAt($code, $innerStart), false);
+			$offset = $start + strlen($whole);
+		}
+
+		$this->collect(substr($code, $offset), $file, $this->lineAt($code, $offset), true);
+	}
+
+	private function lineAt(string $code, int $offset): int
+	{
+		return substr_count($code, "\n", 0, $offset);
+	}
+
+	/**
+	 * Walks $code finding calls. String literals are skipped unless $transparent
+	 * (a markup region where quotes delimit attributes, not JS strings).
+	 */
+	private function collect(string $code, string $file, int $lineBase, bool $transparent): void
+	{
+		$length = strlen($code);
+		$i = 0;
+
+		while ($i < $length) {
+			$char = $code[$i];
+
+			if (substr($code, $i, 4) === '<!--') {
+				$i = $this->skipTo($code, $i + 4, '-->');
+
+				continue;
+			}
+
+			if (substr($code, $i, 2) === '//') {
+				$i = $this->skipTo($code, $i + 2, "\n");
+
+				continue;
+			}
+
+			if (substr($code, $i, 2) === '/*') {
+				$i = $this->skipTo($code, $i + 2, '*/');
+
+				continue;
+			}
+
+			if ($char === '`' || !$transparent && ($char === '"' || $char === "'")) {
+				$i = $this->skipString($code, $i, $char);
+
+				continue;
+			}
+
+			if (!$this->isNameStart($char)) {
+				$i++;
+
+				continue;
+			}
+
+			$i = $this->identifier($code, $i, $file, $lineBase);
+		}
+	}
+
+	/**
+	 * Reads the identifier at $start and, when it is one of the call names used
+	 * as a function, records it. Returns the index to continue from.
+	 */
+	private function identifier(string $code, int $start, string $file, int $lineBase): int
+	{
+		$length = strlen($code);
+		$end = $start;
+
+		while ($end < $length && $this->isNamePart($code[$end])) {
+			$end++;
+		}
+
+		$name = substr($code, $start, $end - $start);
+		$prev = $start > 0 ? $code[$start - 1] : '';
+
+		if (!array_key_exists($name, self::CALLS) || $prev === '.' || $this->isNamePart($prev)) {
+			return $end;
+		}
+
+		$open = $this->skipSpace($code, $end);
+
+		if ($open >= $length || $code[$open] !== '(') {
+			return $end;
+		}
+
+		[$args, $after] = $this->arguments($code, $open);
+		$this->emit($name, $args, $file . ':' . ($lineBase + substr_count($code, "\n", 0, $start) + 1));
+
+		return $after;
+	}
+
+	/**
+	 * @return array{list<?string>, int}
+	 */
+	private function arguments(string $code, int $open): array
+	{
+		$length = strlen($code);
+		$i = $open + 1;
+		$start = $i;
+		$depth = 0;
+		$args = [];
+
+		while ($i < $length) {
+			$char = $code[$i];
+
+			if ($char === '"' || $char === "'" || $char === '`') {
+				$i = $this->skipString($code, $i, $char);
+
+				continue;
+			}
+
+			if ($char === '(' || $char === '[' || $char === '{') {
+				$depth++;
+				$i++;
+
+				continue;
+			}
+
+			if ($char === ')' && $depth === 0) {
+				$args[] = $this->literal(substr($code, $start, $i - $start));
+
+				return [$args, $i + 1];
+			}
+
+			if ($char === ')' || $char === ']' || $char === '}') {
+				$depth--;
+				$i++;
+
+				continue;
+			}
+
+			if ($char === ',' && $depth === 0) {
+				$args[] = $this->literal(substr($code, $start, $i - $start));
+				$i++;
+				$start = $i;
+
+				continue;
+			}
+
+			$i++;
+		}
+
+		return [$args, $length];
+	}
+
+	private function literal(string $raw): ?string
+	{
+		$raw = trim($raw);
+
+		if ($raw === '') {
+			return null;
+		}
+
+		$quote = $raw[0];
+
+		if ($quote !== '"' && $quote !== "'" && $quote !== '`') {
+			return null;
+		}
+
+		$length = strlen($raw);
+		$value = '';
+
+		for ($i = 1; $i < $length; $i++) {
+			$char = $raw[$i];
+
+			if ($char === '\\') {
+				$value .= $this->unescape($raw[$i + 1] ?? '');
+				$i++;
+
+				continue;
+			}
+
+			if ($quote === '`' && $char === '$' && ($raw[$i + 1] ?? '') === '{') {
+				return null;
+			}
+
+			if ($char === $quote) {
+				return $i === ($length - 1) ? $value : null;
+			}
+
+			$value .= $char;
+		}
+
+		// The argument parser only passes balanced segments, so a quoted arg
+		// always closes above.
+		// @codeCoverageIgnoreStart
+		return null;
+		// @codeCoverageIgnoreEnd
+	}
+
+	private function unescape(string $char): string
+	{
+		return match ($char) {
+			'n' => "\n",
+			't' => "\t",
+			'r' => "\r",
+			default => $char,
+		};
+	}
+
+	private function skipString(string $code, int $i, string $quote): int
+	{
+		$length = strlen($code);
+
+		for ($i++; $i < $length; $i++) {
+			$char = $code[$i];
+
+			if ($char === '\\') {
+				$i++;
+
+				continue;
+			}
+
+			if ($quote === '`' && $char === '$' && ($code[$i + 1] ?? '') === '{') {
+				$i = $this->skipBraces($code, $i + 1) - 1;
+
+				continue;
+			}
+
+			if ($char === $quote) {
+				return $i + 1;
+			}
+		}
+
+		return $length;
+	}
+
+	private function skipBraces(string $code, int $i): int
+	{
+		$length = strlen($code);
+		$depth = 0;
+
+		while ($i < $length) {
+			$char = $code[$i];
+
+			if ($char === '"' || $char === "'" || $char === '`') {
+				$i = $this->skipString($code, $i, $char);
+
+				continue;
+			}
+
+			if ($char === '{') {
+				$depth++;
+				$i++;
+
+				continue;
+			}
+
+			if ($char === '}') {
+				$depth--;
+				$i++;
+
+				if ($depth === 0) {
+					return $i;
+				}
+
+				continue;
+			}
+
+			$i++;
+		}
+
+		return $length;
+	}
+
+	private function skipTo(string $code, int $from, string $needle): int
+	{
+		$at = strpos($code, $needle, $from);
+
+		return $at === false ? strlen($code) : $at + strlen($needle);
+	}
+
+	private function skipSpace(string $code, int $i): int
+	{
+		$length = strlen($code);
+
+		while (
+			$i < $length
+			&& ($code[$i] === ' ' || $code[$i] === "\t" || $code[$i] === "\n" || $code[$i] === "\r")
+		) {
+			$i++;
+		}
+
+		return $i;
+	}
+
+	private function isNameStart(string $char): bool
+	{
+		return $char === '_' || $char === '$' || ctype_alpha($char);
+	}
+
+	private function isNamePart(string $char): bool
+	{
+		return $this->isNameStart($char) || ctype_digit($char);
+	}
+}
