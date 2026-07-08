@@ -1,6 +1,6 @@
 {
 	"name": "celemas/verba",
-	"description": "A PHP template engine that doesn't require you to learn a new syntax",
+	"description": "Gettext-style internationalization for PHP without the gettext extension",
 	"type": "library",
 	"license": "MIT",
 	"authors": [
@@ -18,7 +18,10 @@
 	"autoload": {
 		"psr-4": {
 			"Celemas\\Verba\\": "src/"
-		}
+		},
+		"files": [
+			"src/functions.php"
+		]
 	},
 	"autoload-dev": {
 		"psr-4": {
