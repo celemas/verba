@@ -1,5 +1,13 @@
 # Celemas Verba
 
+<!-- prettier-ignore-start -->
+[![ci](https://codeberg.org/celemas/verba/badges/workflows/ci.yml/badge.svg?style=flat&logo=codeberg&logoColor=white&label=ci)](https://codeberg.org/celemas/verba/actions)
+[![code coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Fcode%2Fbadge.json)](https://cov.celemas.dev/celemas/verba/code)
+[![type coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Ftypes%2Fbadge-cover.json)](https://cov.celemas.dev/celemas/verba/types)
+[![psalm level](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Ftypes%2Fbadge-level.json)](https://cov.celemas.dev/celemas/verba/types)
+[![Software License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+<!-- prettier-ignore-end -->
+
 Gettext-style internationalization for PHP without the `gettext` extension.
 
 Verba keeps the workflow you know from gettext — mark strings in code, extract them, translate, ship — but drops the parts that make the extension awkward to operate:
