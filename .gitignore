@@ -1,0 +1,14 @@
+.coverage/
+cache/
+vendor/
+data/
+tmp/
+*.log
+.cache
+.env
+.php*.cache
+bench/composer.lock
+clover.xml
+composer.lock
+phpunit.xml
+psalm.xml
