@@ -29,7 +29,8 @@
 		}
 	},
 	"require": {
-		"php": "^8.5"
+		"php": "^8.5",
+		"celemas/cli": "^0.2.0"
 	},
 	"require-dev": {
 		"celemas/dev": "^4.2"
