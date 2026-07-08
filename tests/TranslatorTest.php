@@ -206,4 +206,21 @@ class TranslatorTest extends TestCase
 			$t->translateDomainPlural('shop', 'nomatch', 'nomatches', 1),
 		);
 	}
+
+	public function testExportReturnsDomainCatalog(): void
+	{
+		$t = new Translator('de', ['shop' => $this->i18n()]);
+		$export = $t->export('shop');
+
+		$this->assertSame('de', $export['plural']);
+		$this->assertSame('In den Warenkorb', $export['messages']['Add to cart']);
+		$this->assertArrayNotHasKey('Untranslated', $export['messages']);
+	}
+
+	public function testExportUnknownDomainIsEmpty(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame(['plural' => 'de', 'messages' => []], $t->export('missing-domain'));
+	}
 }

@@ -13,14 +13,19 @@ use Closure;
  */
 final class Catalog
 {
+	/** @var Closure(int): int */
+	private readonly Closure $plural;
+
 	/**
 	 * @param array<string, string|list<string>|null> $messages
-	 * @param Closure(int): int $plural
+	 * @param string $pluralKey A locale or rule id resolved through {@see Plurals}.
 	 */
 	public function __construct(
-		private array $messages,
-		private Closure $plural,
-	) {}
+		private readonly array $messages,
+		private readonly string $pluralKey,
+	) {
+		$this->plural = Plurals::rule($pluralKey);
+	}
 
 	/**
 	 * Loads `<file>`, falling back to an empty catalog when it is missing or
@@ -29,19 +34,19 @@ final class Catalog
 	public static function load(string $file, string $locale): self
 	{
 		if (!is_file($file)) {
-			return new self([], Plurals::rule($locale));
+			return new self([], $locale);
 		}
 
 		/** @var mixed $data */
 		$data = require $file;
 
 		if (!is_array($data)) {
-			return new self([], Plurals::rule($locale));
+			return new self([], $locale);
 		}
 
 		return new self(
 			self::readMessages($data['messages'] ?? null),
-			self::readPlural($data['plural'] ?? null, $locale),
+			self::readPluralKey($data['plural'] ?? null, $locale),
 		);
 	}
 
@@ -61,12 +66,10 @@ final class Catalog
 	/**
 	 * A catalog may borrow another language's rule via a `plural` key holding a
 	 * locale/rule id (e.g. `'plural' => 'ru'`); otherwise its own locale rules.
-	 *
-	 * @return Closure(int): int
 	 */
-	private static function readPlural(mixed $plural, string $locale): Closure
+	private static function readPluralKey(mixed $plural, string $locale): string
 	{
-		return Plurals::rule(is_string($plural) ? $plural : $locale);
+		return is_string($plural) ? $plural : $locale;
 	}
 
 	/**
@@ -86,5 +89,27 @@ final class Catalog
 	public function form(int $n): int
 	{
 		return ($this->plural)($n);
+	}
+
+	/**
+	 * The catalog as canonical, JSON-ready data: the plural rule id plus every
+	 * translated message. Untranslated ids (null) are dropped — a consumer of
+	 * the payload falls back to the id, mirroring the runtime.
+	 *
+	 * @return array{plural: string, messages: array<string, string|list<string>>}
+	 */
+	public function export(): array
+	{
+		$messages = [];
+
+		foreach ($this->messages as $id => $message) {
+			if ($message === null) {
+				continue;
+			}
+
+			$messages[$id] = $message;
+		}
+
+		return ['plural' => $this->pluralKey, 'messages' => $messages];
 	}
 }

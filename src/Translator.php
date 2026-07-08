@@ -99,6 +99,23 @@ final class Translator
 	}
 
 	/**
+	 * Canonical, JSON-ready catalog data for one domain at this translator's
+	 * locale: the plural rule id and translated messages. Empty when the domain
+	 * is not part of this translator's cascade. Intended for handing a catalog
+	 * to a frontend runtime (e.g. an inline panel payload).
+	 *
+	 * @return array{plural: string, messages: array<string, string|list<string>>}
+	 */
+	public function export(string $domain): array
+	{
+		if (!array_key_exists($domain, $this->domains)) {
+			return ['plural' => $this->locale, 'messages' => []];
+		}
+
+		return $this->catalog($domain)->export();
+	}
+
+	/**
 	 * @param array<array-key, string|int|float> $args
 	 */
 	private function pluralFrom(Catalog $catalog, string $one, int $n, array $args): ?string

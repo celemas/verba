@@ -57,4 +57,43 @@ class CatalogTest extends TestCase
 		$this->assertSame(0, $catalog->form(5));
 		$this->assertSame(['always-A', 'B', 'C'], $catalog->get('k'));
 	}
+
+	public function testExportDropsUntranslatedAndUsesLocaleRule(): void
+	{
+		$catalog = Catalog::load($this->i18n() . '/shop.de.php', 'de');
+
+		$this->assertSame(
+			[
+				'plural' => 'de',
+				'messages' => [
+					'Add to cart' => 'In den Warenkorb',
+					'Save' => 'Speichern',
+					'Found one product' => ['Ein Produkt gefunden', '%d Produkte gefunden'],
+					':count item' => [':count Artikel', ':count Artikel'],
+					'single plural' => 'Einzeln',
+				],
+			],
+			$catalog->export(),
+		);
+	}
+
+	public function testExportReportsPluralOverride(): void
+	{
+		$catalog = Catalog::load($this->i18n() . '/custom.xx.php', 'ru');
+
+		$this->assertSame(
+			[
+				'plural' => 'ja',
+				'messages' => ['k' => ['always-A', 'B', 'C']],
+			],
+			$catalog->export(),
+		);
+	}
+
+	public function testExportOfMissingFileIsEmpty(): void
+	{
+		$catalog = Catalog::load($this->i18n() . '/shop.fr.php', 'fr');
+
+		$this->assertSame(['plural' => 'fr', 'messages' => []], $catalog->export());
+	}
 }
