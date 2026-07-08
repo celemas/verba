@@ -59,16 +59,14 @@ final class Catalog
 	}
 
 	/**
+	 * A catalog may borrow another language's rule via a `plural` key holding a
+	 * locale/rule id (e.g. `'plural' => 'ru'`); otherwise its own locale rules.
+	 *
 	 * @return Closure(int): int
 	 */
 	private static function readPlural(mixed $plural, string $locale): Closure
 	{
-		if ($plural instanceof Closure) {
-			/** @var Closure(int): int $plural */
-			return $plural;
-		}
-
-		return Plurals::rule($locale);
+		return Plurals::rule(is_string($plural) ? $plural : $locale);
 	}
 
 	/**
