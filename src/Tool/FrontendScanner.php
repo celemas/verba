@@ -247,6 +247,7 @@ final class FrontendScanner extends FileScanner
 		// always closes above.
 		// @codeCoverageIgnoreStart
 		return null;
+
 		// @codeCoverageIgnoreEnd
 	}
 
