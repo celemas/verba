@@ -58,4 +58,28 @@ class ExtractorTest extends TestCase
 
 		$this->assertSame(['S'], array_keys($result['messages']));
 	}
+
+	public function testWarnsOnPluralConflicts(): void
+	{
+		$file = $this->write('src/x.php', <<<'PHP'
+			<?php
+
+			__('same');
+			__n('same', 'many', 2);
+			__n('other', 'many', 2);
+			__n('other', 'others', 2);
+			PHP);
+		$domain = new Domain(
+			'app',
+			$this->tmpDir() . '/i18n',
+			['de'],
+			[new PhpScanner([$file])],
+			default: true,
+		);
+
+		$warnings = implode("\n", new Extractor($domain)->extract()['warnings']);
+
+		$this->assertStringContainsString('Mixed singular and plural calls', $warnings);
+		$this->assertStringContainsString('Conflicting plural forms', $warnings);
+	}
 }

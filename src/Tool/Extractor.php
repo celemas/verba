@@ -31,7 +31,14 @@ final class Extractor
 					continue;
 				}
 
-				$merged[$message->id] = $this->fold($merged[$message->id] ?? null, $message);
+				$existing = $merged[$message->id] ?? null;
+				$warning = $this->conflict($existing, $message);
+
+				if ($warning !== null) {
+					$warnings[] = $warning;
+				}
+
+				$merged[$message->id] = $this->fold($existing, $message);
 			}
 
 			foreach ($scanner->warnings() as $warning) {
@@ -42,6 +49,21 @@ final class Extractor
 		ksort($merged, SORT_STRING);
 
 		return ['messages' => $merged, 'warnings' => $warnings];
+	}
+
+	private function conflict(?Message $existing, Message $next): ?string
+	{
+		if ($existing === null || $existing->plural === $next->plural) {
+			return null;
+		}
+
+		$location = $next->locations[0] ?? 'unknown location';
+
+		if ($existing->plural === null || $next->plural === null) {
+			return "Mixed singular and plural calls for message id '{$next->id}' at {$location}";
+		}
+
+		return "Conflicting plural forms for message id '{$next->id}' at {$location}";
 	}
 
 	private function fold(?Message $existing, Message $next): Message
