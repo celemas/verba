@@ -326,6 +326,8 @@ final class FrontendScanner extends FileScanner
 
 	private function htmlCodepoint(string $hex): string
 	{
+		// Braced escapes already give one full codepoint. Fixed-width \uXXXX
+		// escapes use json_decode above so PHP handles surrogate pairs for us.
 		$entity = '&#x' . $hex . ';';
 		$decoded = html_entity_decode($entity, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
