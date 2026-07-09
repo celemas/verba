@@ -30,8 +30,9 @@ final class PhpScanner extends FileScanner
 
 		for ($i = 0; $i < $count; $i++) {
 			$token = $tokens[$i];
+			$name = $this->callName($token);
 
-			if (!$token->is(T_STRING) || !array_key_exists($token->text, self::CALLS)) {
+			if ($name === null) {
 				continue;
 			}
 
@@ -56,9 +57,26 @@ final class PhpScanner extends FileScanner
 			}
 
 			[$args, $end] = $this->arguments($tokens, $open);
-			$this->emit($token->text, $args, $file . ':' . $token->line);
+			$this->emit($name, $args, $file . ':' . $token->line);
 			$i = $end;
 		}
+	}
+
+	private function callName(PhpToken $symbol): ?string
+	{
+		if ($symbol->is(T_STRING) && array_key_exists($symbol->text, self::CALLS)) {
+			return $symbol->text;
+		}
+
+		if ($symbol->is(T_NAME_FULLY_QUALIFIED)) {
+			$name = ltrim($symbol->text, '\\');
+
+			if (array_key_exists($name, self::CALLS)) {
+				return $name;
+			}
+		}
+
+		return null;
 	}
 
 	/**

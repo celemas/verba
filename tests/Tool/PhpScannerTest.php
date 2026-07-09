@@ -29,6 +29,7 @@ class PhpScannerTest extends TestCase
 			__('It\'s here');
 			__("Tab\there");
 			__('Back\\slash');
+			\__('Fully qualified');
 			PHP;
 
 		$scanner = new PhpScanner([$this->write('a.php', $code)]);
@@ -39,6 +40,7 @@ class PhpScannerTest extends TestCase
 		$this->assertContains("It's here", $ids);
 		$this->assertContains("Tab\there", $ids);
 		$this->assertContains('Back\\slash', $ids);
+		$this->assertContains('Fully qualified', $ids);
 		$this->assertSame([], $scanner->warnings());
 	}
 
