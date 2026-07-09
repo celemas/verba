@@ -30,7 +30,7 @@ class StatusTest extends TestCase
 		$this->write('src/x.php', "<?php\n__('A');\n__('B');\n");
 		$this->write(
 			'i18n/app.de.php',
-			"<?php\nreturn ['messages' => ['A' => 'Ae', 'B' => null, 'Extra' => 'X']];\n",
+			"<?php\nreturn ['messages' => ['A' => 'Ae', 'B' => null, 'Extra' => 'X'], 'obsolete' => ['Old' => 'Alt']];\n",
 		);
 
 		$report = new Status($this->domain(['de']))->run();
@@ -39,7 +39,7 @@ class StatusTest extends TestCase
 		$this->assertSame(1, $de['translated']);
 		$this->assertSame(1, $de['untranslated']);
 		$this->assertSame(0, $de['missing']);
-		$this->assertSame(1, $de['obsolete']);
+		$this->assertSame(2, $de['obsolete']);
 		$this->assertSame(2, $de['total']);
 		$this->assertFalse($report->clean());
 	}

@@ -63,10 +63,10 @@ final class Status
 			}
 		}
 
-		$obsolete = 0;
+		$obsolete = count($catalog->obsolete);
 
 		foreach (array_keys($catalog->messages) as $id) {
-			if (array_key_exists($id, $fresh)) {
+			if (array_key_exists($id, $fresh) || array_key_exists($id, $catalog->obsolete)) {
 				continue;
 			}
 
