@@ -97,6 +97,16 @@ class FrontendScannerTest extends TestCase
 			__('It\'s');
 			__("Quote\"x");
 			__('Back\\slash');
+			__("Caf\u00e9");
+			__("Smile \u{1f600}");
+			__("Pair \uD83D\uDE00");
+			__("Hex \x41");
+			__("Controls \b\f\v");
+			__("Bad brace \u{}");
+			__("Bad open \u{1");
+			__("Bad unicode \u0");
+			__("Bad hex \xG");
+			__("Bad surrogate \uD800");
 			JS;
 
 		$ids = $this->ids($this->scanOne('a.js', $code));
@@ -107,6 +117,35 @@ class FrontendScannerTest extends TestCase
 		$this->assertContains("It's", $ids);
 		$this->assertContains('Quote"x', $ids);
 		$this->assertContains('Back\\slash', $ids);
+		$this->assertContains("Caf\u{00e9}", $ids);
+		$this->assertContains("Smile \u{1f600}", $ids);
+		$this->assertContains("Pair \u{1f600}", $ids);
+		$this->assertContains('Hex A', $ids);
+		$this->assertContains("Controls \b\f\v", $ids);
+		$this->assertContains('Bad brace u{}', $ids);
+		$this->assertContains('Bad open u{1', $ids);
+		$this->assertContains('Bad unicode u0', $ids);
+		$this->assertContains('Bad hex xG', $ids);
+		$this->assertContains('Bad surrogate ', $ids);
+	}
+
+	public function testSkipsRegexLiterals(): void
+	{
+		$code = <<<'JS'
+			/__("StartRegex")/;
+			const r = /__("Regex")/g;
+			const escaped = /\/__("Escaped")/;
+			const chars = /[__("Class")]/;
+			const value = count / __('Real');
+			const afterParen = (count) / __('AfterParen');
+			JS;
+
+		$this->assertSame(['Real', 'AfterParen'], $this->ids($this->scanOne('a.js', $code)));
+	}
+
+	public function testSkipsUnterminatedRegexLiteral(): void
+	{
+		$this->assertSame([], $this->scanOne('a.js', '/__("Regex")')->scan());
 	}
 
 	public function testTemplateLiteralArguments(): void
@@ -173,6 +212,7 @@ class FrontendScannerTest extends TestCase
 	{
 		$code = <<<'VUE'
 			<template>
+			  <a href="https://example.test">{{ __('AfterUrl') }}</a>
 			  <button :title="__('AttrCall')">{{ __('Mustache') }}</button>
 			</template>
 			<script setup>
@@ -183,6 +223,7 @@ class FrontendScannerTest extends TestCase
 
 		$ids = $this->ids($this->scanOne('d.vue', $code));
 
+		$this->assertContains('AfterUrl', $ids);
 		$this->assertContains('AttrCall', $ids);
 		$this->assertContains('Mustache', $ids);
 		$this->assertContains('ScriptReal', $ids);

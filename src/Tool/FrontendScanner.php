@@ -91,14 +91,20 @@ final class FrontendScanner extends FileScanner
 				continue;
 			}
 
-			if (substr($code, $i, 2) === '//') {
+			if (!$transparent && substr($code, $i, 2) === '//') {
 				$i = $this->skipTo($code, $i + 2, "\n");
 
 				continue;
 			}
 
-			if (substr($code, $i, 2) === '/*') {
+			if (!$transparent && substr($code, $i, 2) === '/*') {
 				$i = $this->skipTo($code, $i + 2, '*/');
+
+				continue;
+			}
+
+			if (!$transparent && $char === '/' && $this->startsRegex($code, $i)) {
+				$i = $this->skipRegex($code, $i);
 
 				continue;
 			}
@@ -226,8 +232,7 @@ final class FrontendScanner extends FileScanner
 			$char = $raw[$i];
 
 			if ($char === '\\') {
-				$value .= $this->unescape($raw[$i + 1] ?? '');
-				$i++;
+				$value .= $this->unescape($raw, $i);
 
 				continue;
 			}
@@ -251,14 +256,107 @@ final class FrontendScanner extends FileScanner
 		// @codeCoverageIgnoreEnd
 	}
 
-	private function unescape(string $char): string
+	private function unescape(string $raw, int &$i): string
 	{
+		$i++;
+		$char = $raw[$i] ?? '';
+
 		return match ($char) {
+			'b' => "\b",
+			'f' => "\f",
 			'n' => "\n",
-			't' => "\t",
 			'r' => "\r",
+			't' => "\t",
+			'v' => "\v",
+			'u' => $this->unicodeEscape($raw, $i),
+			'x' => $this->hexEscape($raw, $i),
 			default => $char,
 		};
+	}
+
+	private function unicodeEscape(string $raw, int &$i): string
+	{
+		if (($raw[$i + 1] ?? '') === '{') {
+			$end = strpos($raw, '}', $i + 2);
+
+			if ($end === false) {
+				return 'u';
+			}
+
+			$hex = substr($raw, $i + 2, $end - $i - 2);
+
+			if ($hex === '' || !ctype_xdigit($hex)) {
+				return 'u';
+			}
+
+			$i = $end;
+
+			return $this->htmlCodepoint($hex);
+		}
+
+		$hex = substr($raw, $i + 1, 4);
+
+		if (strlen($hex) !== 4 || !ctype_xdigit($hex)) {
+			return 'u';
+		}
+
+		$escape = '\\u' . $hex;
+		$i += 4;
+
+		if ($this->highSurrogate($hex)) {
+			$low = substr($raw, $i + 3, 4);
+
+			if (
+				($raw[$i + 1] ?? '') === '\\'
+				&& ($raw[$i + 2] ?? '') === 'u'
+				&& strlen($low) === 4
+				&& ctype_xdigit($low)
+				&& $this->lowSurrogate($low)
+			) {
+				$escape .= '\\u' . $low;
+				$i += 6;
+			}
+		}
+
+		/** @var string|null $decoded */
+		$decoded = json_decode('"' . $escape . '"');
+
+		return $decoded ?? '';
+	}
+
+	private function htmlCodepoint(string $hex): string
+	{
+		$entity = '&#x' . $hex . ';';
+		$decoded = html_entity_decode($entity, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+		return $decoded === $entity ? '' : $decoded;
+	}
+
+	private function highSurrogate(string $hex): bool
+	{
+		$code = hexdec($hex);
+
+		return $code >= 0xD800 && $code <= 0xDBFF;
+	}
+
+	private function lowSurrogate(string $hex): bool
+	{
+		$code = hexdec($hex);
+
+		return $code >= 0xDC00 && $code <= 0xDFFF;
+	}
+
+	private function hexEscape(string $raw, int &$i): string
+	{
+		$hex = substr($raw, $i + 1, 2);
+
+		if (strlen($hex) !== 2 || !ctype_xdigit($hex)) {
+			return 'x';
+		}
+
+		$i += 2;
+
+		return chr(hexdec($hex));
 	}
 
 	private function skipString(string $code, int $i, string $quote): int
@@ -321,6 +419,97 @@ final class FrontendScanner extends FileScanner
 			}
 
 			$i++;
+		}
+
+		return $length;
+	}
+
+	private function startsRegex(string $code, int $i): bool
+	{
+		for ($j = $i - 1; $j >= 0; $j--) {
+			$prev = $code[$j];
+
+			if ($prev === ' ' || $prev === "\t" || $prev === "\n" || $prev === "\r") {
+				continue;
+			}
+
+			if (in_array(
+				$prev,
+				['(', '[', '{', '=', ',', ':', ';', '!', '&', '|', '?', '+', '-', '*', '~', '%', '^', '<', '>'],
+				true,
+			)) {
+				return true;
+			}
+
+			if ($this->isNamePart($prev)) {
+				$end = $j + 1;
+
+				while ($j >= 0 && $this->isNamePart($code[$j])) {
+					$j--;
+				}
+
+				return in_array(
+					substr($code, $j + 1, $end - $j - 1),
+					[
+						'case',
+						'delete',
+						'instanceof',
+						'of',
+						'return',
+						'throw',
+						'typeof',
+						'void',
+						'yield',
+					],
+					true,
+				);
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	private function skipRegex(string $code, int $i): int
+	{
+		$length = strlen($code);
+		$inClass = false;
+
+		for ($i++; $i < $length; $i++) {
+			$char = $code[$i];
+
+			if ($char === '\\') {
+				$i++;
+
+				continue;
+			}
+
+			if ($char === '[') {
+				$inClass = true;
+
+				continue;
+			}
+
+			if ($char === ']') {
+				$inClass = false;
+
+				continue;
+			}
+
+			if (($char === "\n" || $char === "\r") && !$inClass) {
+				return $i;
+			}
+
+			if ($char === '/' && !$inClass) {
+				$i++;
+
+				while ($i < $length && ctype_alpha($code[$i])) {
+					$i++;
+				}
+
+				return $i;
+			}
 		}
 
 		return $length;
