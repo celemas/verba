@@ -116,6 +116,31 @@ final class Translator
 	}
 
 	/**
+	 * The full payload for handing catalogs to the JavaScript runtime: this
+	 * translator's locale plus the export of each named domain, in cascade
+	 * order. List only domains meant for the browser — the payload ends up
+	 * world-readable in the page source.
+	 *
+	 * @param list<string> $domains
+	 * @return array{locale: string, domains: list<array{domain: string, plural: string, messages: array<string, string|list<string>>}>}
+	 */
+	public function exportMany(array $domains): array
+	{
+		$exports = [];
+
+		foreach ($domains as $domain) {
+			$export = $this->export($domain);
+			$exports[] = [
+				'domain' => $domain,
+				'plural' => $export['plural'],
+				'messages' => $export['messages'],
+			];
+		}
+
+		return ['locale' => $this->locale, 'domains' => $exports];
+	}
+
+	/**
 	 * @param array<array-key, string|int|float> $args
 	 */
 	private function pluralFrom(Catalog $catalog, string $one, int $n, array $args): ?string

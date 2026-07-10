@@ -223,4 +223,18 @@ class TranslatorTest extends TestCase
 
 		$this->assertSame(['plural' => 'de', 'messages' => []], $t->export('missing-domain'));
 	}
+
+	public function testExportManyBuildsPayloadInOrder(): void
+	{
+		$t = new Translator('de', $this->cascade());
+		$payload = $t->exportMany(['shop', 'missing-domain']);
+
+		$this->assertSame('de', $payload['locale']);
+		$this->assertSame('shop', $payload['domains'][0]['domain']);
+		$this->assertSame('In den Warenkorb', $payload['domains'][0]['messages']['Add to cart']);
+		$this->assertSame(
+			['domain' => 'missing-domain', 'plural' => 'de', 'messages' => []],
+			$payload['domains'][1],
+		);
+	}
 }
