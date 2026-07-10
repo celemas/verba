@@ -108,6 +108,28 @@ $app = new Domain(
 - **`PhpScanner`** walks the PHP token stream — no parser, no regex — and reads `__`/`__n`/`__d`/`__dn` calls with literal string arguments. Boiler templates are PHP, so they are covered too.
 - **`JavascriptScanner`** reads `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue`. Only literal arguments are captured; a dynamic id is reported as a warning and skipped.
 
+## JavaScript runtime
+
+The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the same four functions, the same plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
+
+```php
+<script id="verba-catalog" type="application/json">
+	<?= json_encode($translator->exportMany(['app']), JSON_HEX_TAG) ?>
+</script>
+```
+
+```js
+import { __, __n, activate, load } from '@celemas/verba';
+
+const translator = load(); // reads #verba-catalog, null during SSR
+if (translator) activate(translator);
+
+__('Save');
+__n(':count file', ':count files', 3); // ':count' is bound automatically
+```
+
+With no translator active the functions return the interpolated message id, mirroring PHP.
+
 ## Commands
 
 Register the two commands with your [`celemas/cli`](https://codeberg.org/celemas/cli) runner, passing the domains to maintain:

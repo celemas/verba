@@ -1,0 +1,40 @@
+{
+	"name": "@celemas/verba",
+	"version": "0.1.0",
+	"description": "JavaScript runtime for Celemas Verba translation catalogs",
+	"license": "MIT",
+	"homepage": "https://celemas.dev/verba",
+	"repository": {
+		"type": "git",
+		"url": "https://codeberg.org/celemas/verba"
+	},
+	"keywords": [
+		"celemas",
+		"internationalization",
+		"i18n",
+		"gettext"
+	],
+	"type": "module",
+	"packageManager": "pnpm@11.5.0",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"check": "tsc && prettier --check .",
+		"format": "prettier --write .",
+		"test": "vitest run"
+	},
+	"devDependencies": {
+		"prettier": "^3.9.4",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
+	}
+}
