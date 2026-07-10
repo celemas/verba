@@ -90,7 +90,7 @@ Scanners find the calls; a `Domain` ties them to a catalog directory and locale 
 
 ```php
 use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\FrontendScanner;
+use Celemas\Verba\Tool\JavascriptScanner;
 use Celemas\Verba\Tool\PhpScanner;
 
 $app = new Domain(
@@ -99,14 +99,14 @@ $app = new Domain(
     locales: ['en', 'de'],
     scanners: [
         new PhpScanner([__DIR__ . '/src', __DIR__ . '/views']),
-        new FrontendScanner([__DIR__ . '/ui/src']),
+        new JavascriptScanner([__DIR__ . '/ui/src']),
     ],
     default: true, // also receives bare __()/__n() calls
 );
 ```
 
 - **`PhpScanner`** walks the PHP token stream — no parser, no regex — and reads `__`/`__n`/`__d`/`__dn` calls with literal string arguments. Boiler templates are PHP, so they are covered too.
-- **`FrontendScanner`** reads `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue`. Only literal arguments are captured; a dynamic id is reported as a warning and skipped.
+- **`JavascriptScanner`** reads `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue`. Only literal arguments are captured; a dynamic id is reported as a warning and skipped.
 
 ## Commands
 

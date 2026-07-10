@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Celemas\Verba\Tests\Tool;
 
 use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\FrontendScanner;
+use Celemas\Verba\Tool\JavascriptScanner;
 use Celemas\Verba\Tool\Message;
 
-class FrontendScannerTest extends TestCase
+class JavascriptScannerTest extends TestCase
 {
 	/**
 	 * @return list<string>
 	 */
-	private function ids(FrontendScanner $scanner): array
+	private function ids(JavascriptScanner $scanner): array
 	{
 		return array_map(static fn(Message $m): string => $m->id, $scanner->scan());
 	}
 
-	private function scanOne(string $name, string $code): FrontendScanner
+	private function scanOne(string $name, string $code): JavascriptScanner
 	{
-		return new FrontendScanner([$this->write($name, $code)]);
+		return new JavascriptScanner([$this->write($name, $code)]);
 	}
 
 	public function testExtractsAllCallForms(): void
@@ -237,7 +237,7 @@ class FrontendScannerTest extends TestCase
 		$this->write('app/c.ts', "__('Ts');\n");
 		$this->write('app/styles.css', "__('Css');\n");
 
-		$ids = $this->ids(new FrontendScanner([$this->tmpDir() . '/app']));
+		$ids = $this->ids(new JavascriptScanner([$this->tmpDir() . '/app']));
 		sort($ids);
 
 		$this->assertSame(['Jsx', 'Ts', 'Tsx'], $ids);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Celemas\Verba\Tool;
 
 /**
- * Extracts `__`, `__n`, `__d`, and `__dn` calls from frontend source across a
+ * Extracts `__`, `__n`, `__d`, and `__dn` calls from JavaScript source across a
  * range of dialects — `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue` — with
  * one shared character lexer that skips strings, template literals, and
  * comments. Only literal string arguments are captured.
@@ -19,7 +19,7 @@ namespace Celemas\Verba\Tool;
  *
  * @api
  */
-final class FrontendScanner extends FileScanner
+final class JavascriptScanner extends FileScanner
 {
 	#[\Override]
 	protected function extensions(): array
