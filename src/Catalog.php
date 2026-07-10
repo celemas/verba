@@ -93,8 +93,9 @@ final class Catalog
 
 	/**
 	 * The catalog as canonical, JSON-ready data: the plural rule id plus every
-	 * translated message. Untranslated ids (null) are dropped — a consumer of
-	 * the payload falls back to the id, mirroring the runtime.
+	 * translated message. Untranslated ids (null or an empty form list) are
+	 * dropped — a consumer of the payload falls back to the id, mirroring the
+	 * runtime.
 	 *
 	 * @return array{plural: string, messages: array<string, string|list<string>>}
 	 */
@@ -103,7 +104,7 @@ final class Catalog
 		$messages = [];
 
 		foreach ($this->messages as $id => $message) {
-			if ($message === null) {
+			if ($message === null || $message === []) {
 				continue;
 			}
 

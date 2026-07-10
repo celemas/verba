@@ -75,6 +75,18 @@ class StatusCommandTest extends TestCase
 		$this->assertSame(1, $exit);
 	}
 
+	public function testStrictFailsForEmptyPluralList(): void
+	{
+		$_SERVER['argv'] = ['run', 'i18n:status', '--strict'];
+		$this->write('src/x.php', "<?php\n__n('A', 'As', 2);\n");
+		$this->write('i18n/app.de.php', "<?php\nreturn ['messages' => ['A' => []]];\n");
+
+		[$exit, $output] = $this->capture(new StatusCommand([$this->domain(['de'])]));
+
+		$this->assertSame(1, $exit);
+		$this->assertStringContainsString('0/1 translated, 0 missing, 1 untranslated', $output);
+	}
+
 	public function testStrictPassesWhenClean(): void
 	{
 		$_SERVER['argv'] = ['run', 'i18n:status', '--strict'];

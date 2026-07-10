@@ -55,7 +55,7 @@ final class Status
 			if (!array_key_exists($id, $catalog->messages)) {
 				$missing++;
 				$locations = [...$locations, ...$message->locations];
-			} elseif ($catalog->messages[$id] === null) {
+			} elseif ($catalog->messages[$id] === null || $catalog->messages[$id] === []) {
 				$untranslated++;
 				$locations = [...$locations, ...$message->locations];
 			} else {

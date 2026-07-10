@@ -90,6 +90,13 @@ class CatalogTest extends TestCase
 		);
 	}
 
+	public function testExportDropsEmptyPluralLists(): void
+	{
+		$catalog = Catalog::load($this->i18n() . '/edge.ru.php', 'ru');
+
+		$this->assertSame(['twoforms' => ['odna', 'dve']], $catalog->export()['messages']);
+	}
+
 	public function testExportOfMissingFileIsEmpty(): void
 	{
 		$catalog = Catalog::load($this->i18n() . '/shop.fr.php', 'fr');

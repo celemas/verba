@@ -126,10 +126,20 @@ describe('Translator', () => {
 		expect(t.translatePlural('twoforms', 'x', 5)).toBe('dve');
 	});
 
-	it('falls back to the singular id for empty form lists', () => {
+	it('treats empty form lists as untranslated', () => {
 		const t = new Translator({ locale: 'ru', domains: [edge] });
 
-		expect(t.translatePlural('emptyforms', 'x', 5)).toBe('emptyforms');
+		expect(t.translatePlural('emptyforms', 'many-x', 1)).toBe('emptyforms');
+		expect(t.translatePlural('emptyforms', 'many-x', 5)).toBe('many-x');
+	});
+
+	it('skips empty form lists to later entries', () => {
+		const t = new Translator({
+			locale: 'ru',
+			domains: [edge, { domain: 'more', plural: 'en', messages: { emptyforms: 'empty en' } }],
+		});
+
+		expect(t.translatePlural('emptyforms', 'x', 5)).toBe('empty en');
 	});
 
 	it('defaults the plural rule to the translator locale', () => {
@@ -159,5 +169,58 @@ describe('Translator', () => {
 		const t = new Translator(cascade);
 
 		expect(t.translateDomainPlural('shop', 'nomatch', 'nomatches', 1)).toBe('nomatch');
+	});
+});
+
+describe('Translator with a locale fallback chain', () => {
+	// One entry per locale of the PHP-side fallback chain, es → ru, as
+	// Translator::exportMany() ships it. Each entry has its own plural rule.
+	const chain: Payload = {
+		locale: 'es',
+		domains: [
+			{ domain: 'app', plural: 'es', messages: { x: ['un', 'unos'] } },
+			{
+				domain: 'app',
+				plural: 'ru',
+				messages: {
+					x: 'X-en',
+					thing: [':count thing one', ':count thing few', ':count thing many'],
+				},
+			},
+		],
+	};
+
+	it('walks repeated domain entries for pinned lookups', () => {
+		const t = new Translator(chain);
+
+		expect(t.translateDomain('app', 'x')).toBe('X-en');
+		expect(t.translateDomainPlural('app', 'x', 'xs', 1)).toBe('un');
+	});
+
+	it('reaches a fallback string behind a plural list', () => {
+		const t = new Translator(chain);
+
+		expect(t.translate('x')).toBe('X-en');
+		expect(t.translatePlural('x', 'xs', 1)).toBe('un');
+	});
+
+	it("applies each entry's own plural rule", () => {
+		const t = new Translator(chain);
+
+		expect(t.translatePlural('thing', 'things', 21)).toBe('21 thing one');
+		expect(t.translatePlural('thing', 'things', 5)).toBe('5 thing many');
+	});
+
+	it('keeps the domain cascade ahead of locale fallback', () => {
+		const t = new Translator({
+			locale: 'es',
+			domains: [
+				{ domain: 'app', plural: 'es', messages: {} },
+				{ domain: 'app', plural: 'en', messages: { shared: 'app-en' } },
+				{ domain: 'framework', plural: 'es', messages: { shared: 'framework-es' } },
+			],
+		});
+
+		expect(t.translate('shared')).toBe('app-en');
 	});
 });

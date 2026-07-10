@@ -60,6 +60,16 @@ Verba::deactivate();                  // reset (matters for long-running workers
 
 `__d('cosray', …)` pins the `cosray` domain; bare `__(…)` searches the cascade.
 
+A third argument names fallback locales, tried in order whenever the primary locale lacks a string. Resolution is per id and stays within a domain before the cascade continues, so the domain cascade outranks the locale fallback:
+
+```php
+$translator = new Translator('es', $domains, ['en', 'de']); // es → en → de → id
+```
+
+Locale ids may contain ASCII letters, digits, hyphens, and underscores, for example `zh-Hant` or `pt_BR`. They become catalog filename segments.
+
+This keeps a partially translated locale usable — untranslated ids surface in `en` instead of as raw message ids. `Translator::exportMany()` ships locale-specific payload entries in resolution order, each with its own plural rule; entries with no reachable messages are omitted. The JavaScript runtime therefore resolves the same chain. Fallback is a runtime concern only: extraction and `i18n:status` stay per catalog file, so an empty `es` catalog still reports as untranslated.
+
 ## Catalog files
 
 One file per domain and locale, named `<domain>.<locale>.php`:

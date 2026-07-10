@@ -23,8 +23,11 @@ type Domain = {
 /**
  * Resolves messages for one locale across an ordered cascade of domains —
  * the JavaScript mirror of the PHP Translator, fed by the payload that
- * `Translator::exportMany()` produces. The first domain whose catalog holds
- * a translation wins; a miss falls back to the message id itself.
+ * `Translator::exportMany()` produces. The first entry whose catalog holds
+ * a translation wins; a miss falls back to the message id itself. A domain
+ * may appear once per locale of the PHP-side fallback chain, each entry
+ * carrying its own plural rule, so walking entries in payload order
+ * resolves the same chain the PHP runtime does.
  */
 export class Translator {
 	readonly locale: string;
@@ -53,9 +56,19 @@ export class Translator {
 	}
 
 	translateDomain(name: string, id: string, args: Args = {}): string {
-		const entry = this.domain(name)?.messages[id];
+		for (const domain of this.domains) {
+			if (domain.name !== name) {
+				continue;
+			}
 
-		return interpolate(typeof entry === 'string' ? entry : id, args);
+			const entry = domain.messages[id];
+
+			if (typeof entry === 'string') {
+				return interpolate(entry, args);
+			}
+		}
+
+		return interpolate(id, args);
 	}
 
 	translatePlural(one: string, many: string, n: number, args: Args = {}): string {
@@ -77,14 +90,19 @@ export class Translator {
 		n: number,
 		args: Args = {},
 	): string {
-		const domain = this.domain(name);
-		const form = domain === undefined ? null : pluralFrom(domain, one, n, args);
+		for (const domain of this.domains) {
+			if (domain.name !== name) {
+				continue;
+			}
 
-		return form ?? interpolate(n === 1 ? one : many, pluralArgs(args, n));
-	}
+			const form = pluralFrom(domain, one, n, args);
 
-	private domain(name: string): Domain | undefined {
-		return this.domains.find((domain) => domain.name === name);
+			if (form !== null) {
+				return form;
+			}
+		}
+
+		return interpolate(n === 1 ? one : many, pluralArgs(args, n));
 	}
 }
 
@@ -93,14 +111,11 @@ function readMessages(messages: Messages | undefined): Messages {
 	return messages === undefined || Array.isArray(messages) ? {} : messages;
 }
 
+/** An empty form list counts as untranslated, like a missing id — mirrors PHP. */
 function pluralFrom(domain: Domain, one: string, n: number, args: Args): string | null {
 	const entry = domain.messages[one];
 
-	if (Array.isArray(entry)) {
-		if (entry.length === 0) {
-			return interpolate(one, pluralArgs(args, n));
-		}
-
+	if (Array.isArray(entry) && entry.length > 0) {
 		const form = entry[domain.rule(n)] ?? entry[entry.length - 1];
 
 		return interpolate(form, pluralArgs(args, n));
