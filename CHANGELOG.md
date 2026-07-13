@@ -5,6 +5,7 @@
 ### Added
 
 - Added contextual translation across PHP and JavaScript with `__p`, `__np`, `__dp`, and `__dnp`, including nested catalog storage, extraction, synchronization, status reporting, locale fallback, and browser payload export.
+- Added a catalog format reference covering the schema, synchronization behavior, gettext differences, and design rationale.
 
 ## [0.1.0](https://codeberg.org/celemas/verba/src/tag/0.1.0) (2026-07-13)
 

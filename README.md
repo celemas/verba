@@ -87,7 +87,7 @@ This keeps a partially translated locale usable — untranslated ids surface in 
 
 ## Catalog files
 
-One file per domain and locale, named `<domain>.<locale>.php`:
+One file per domain and locale, named `<domain>.<locale>.php`. See the [catalog format reference](docs/catalog-format.md) for the complete schema and its design rationale.
 
 ```php
 <?php
