@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Celemas\Verba\Tool;
 
+use RuntimeException;
+
 /**
  * Reconciles a domain's catalog files against the current source: fresh ids are
  * added as untranslated, existing translations are kept, a reappearing id is
@@ -104,11 +106,48 @@ final class Sync
 	private function write(string $file, string $contents): void
 	{
 		$dir = dirname($file);
+		$temp = null;
+		$error = null;
 
-		if (!is_dir($dir)) {
-			mkdir($dir, 0o755, true);
+		// Filesystem functions warn before returning failure; this method checks every result below.
+		set_error_handler(static function (int $_severity, string $message) use (&$error): bool {
+			$error = $message;
+
+			return true;
+		});
+
+		try {
+			if (!is_dir($dir)) {
+				$error = null;
+
+				if (!mkdir($dir, 0o755, true) && !is_dir($dir)) {
+					throw self::filesystemError("Cannot create catalog directory '{$dir}'", $error);
+				}
+			}
+
+			$temp = $file . '.' . bin2hex(random_bytes(6)) . '.tmp';
+			$error = null;
+
+			if (file_put_contents($temp, $contents) !== strlen($contents)) {
+				throw self::filesystemError("Cannot write temporary catalog for '{$file}'", $error);
+			}
+
+			$error = null;
+
+			if (!rename($temp, $file)) {
+				throw self::filesystemError("Cannot replace catalog '{$file}'", $error);
+			}
+		} finally {
+			if ($temp !== null && is_file($temp)) {
+				unlink($temp);
+			}
+
+			restore_error_handler();
 		}
+	}
 
-		file_put_contents($file, $contents);
+	private static function filesystemError(string $message, ?string $cause): RuntimeException
+	{
+		return new RuntimeException($cause === null ? $message : $message . ': ' . $cause);
 	}
 }

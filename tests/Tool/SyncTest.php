@@ -9,14 +9,15 @@ use Celemas\Verba\Tool\CatalogFile;
 use Celemas\Verba\Tool\Domain;
 use Celemas\Verba\Tool\PhpScanner;
 use Celemas\Verba\Tool\Sync;
+use RuntimeException;
 
 class SyncTest extends TestCase
 {
-	private function domain(): Domain
+	private function domain(?string $dir = null): Domain
 	{
 		return new Domain(
 			'app',
-			$this->tmpDir() . '/i18n',
+			$dir ?? $this->tmpDir() . '/i18n',
 			['de', 'en'],
 			[new PhpScanner([$this->tmpDir() . '/src'])],
 			default: true,
@@ -84,5 +85,62 @@ class SyncTest extends TestCase
 
 		$this->assertSame(['A' => 'Ae'], $this->catalog()->messages);
 		$this->assertSame([], $this->catalog()->obsolete);
+	}
+
+	public function testThrowsWhenCatalogDirectoryCannotBeCreated(): void
+	{
+		$blocked = $this->write('blocked', 'not a directory');
+
+		try {
+			new Sync($this->domain($blocked))->run();
+			self::fail('Expected catalog directory creation to fail');
+		} catch (RuntimeException $exception) {
+			$this->assertStringContainsString('Cannot create catalog directory', $exception->getMessage());
+			$this->assertStringContainsString('mkdir(', $exception->getMessage());
+		}
+	}
+
+	public function testKeepsCatalogWhenTemporaryWriteFails(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$contents = "<?php\nreturn ['messages' => ['A' => 'Ae']];\n";
+		$file = $this->write('i18n/app.de.php', $contents);
+		$dir = dirname($file);
+		chmod($dir, 0o555);
+		clearstatcache(true, $dir);
+
+		if (is_writable($dir)) {
+			chmod($dir, 0o755);
+			$this->markTestSkipped('Cannot create a non-writable directory on this platform');
+		}
+
+		try {
+			new Sync($this->domain())->run();
+			self::fail('Expected the temporary catalog write to fail');
+		} catch (RuntimeException $exception) {
+			$this->assertStringContainsString('Cannot write temporary catalog', $exception->getMessage());
+			$this->assertStringContainsString('file_put_contents(', $exception->getMessage());
+		} finally {
+			chmod($dir, 0o755);
+		}
+
+		$this->assertSame($contents, file_get_contents($file));
+	}
+
+	public function testCleansTemporaryFileWhenReplacementFails(): void
+	{
+		$marker = $this->write('i18n/app.de.php/marker', 'keep');
+		$file = dirname($marker);
+
+		try {
+			new Sync($this->domain())->run();
+			self::fail('Expected the catalog replacement to fail');
+		} catch (RuntimeException $exception) {
+			$this->assertStringContainsString('Cannot replace catalog', $exception->getMessage());
+			$this->assertStringContainsString('rename(', $exception->getMessage());
+		}
+
+		$this->assertFileExists($marker);
+		$this->assertSame([], glob($file . '.*.tmp'));
 	}
 }
