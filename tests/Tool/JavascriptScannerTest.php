@@ -59,14 +59,50 @@ class JavascriptScannerTest extends TestCase
 		$this->assertSame(['Real'], $this->ids($this->scanOne('a.js', $code)));
 	}
 
+	public function testAllowsCommentsAroundCallsAndLiteralArguments(): void
+	{
+		$code = <<<'JS'
+			__ /* call */ (
+			  /* before */ 'Before' /* ) , after */
+			);
+			__n('one' /* ) */, /* before */ 'many', count);
+			__(
+			  // translator note
+			  'Line'
+			);
+			JS;
+
+		$scanner = $this->scanOne('a.js', $code);
+
+		$this->assertSame(['Before', 'one', 'Line'], $this->ids($scanner));
+		$this->assertSame([], $scanner->warnings());
+	}
+
 	public function testSkipsTemplateLiteralsWithBraces(): void
 	{
 		$code = <<<'JS'
 			const t = `__('inTemplate') ${ {a: 1} } more ${ "}" }`;
+			const escaped = `\${__('escapedExpression')} \` __('rawText')`;
 			__('Real');
 			JS;
 
 		$this->assertSame(['Real'], $this->ids($this->scanOne('a.js', $code)));
+	}
+
+	public function testExtractsCallsFromTemplateInterpolations(): void
+	{
+		$code = <<<'JS'
+			const t = `${/}/.test('}') ? /* } */ __('Inside') : ''} ${
+			  // }
+			  __('LineInside')
+			} ${`nested ${__('Deep')}`}`;
+			__('After');
+			JS;
+
+		$this->assertSame(
+			['Inside', 'LineInside', 'Deep', 'After'],
+			$this->ids($this->scanOne('a.js', $code)),
+		);
 	}
 
 	public function testMemberAndDigitPrefixedAreNotCalls(): void
@@ -80,11 +116,27 @@ class JavascriptScannerTest extends TestCase
 		$this->assertSame(['Real'], $this->ids($this->scanOne('a.js', $code)));
 	}
 
+	public function testSkipsFunctionDeclarations(): void
+	{
+		$code = <<<'TS'
+			function __(id) { return id; }
+			export function __n(one, many, n) { return one; }
+			function* __d(domain, id) { yield id; }
+			declare function __dn(domain, one, many, n): string;
+			__('Real');
+			TS;
+
+		$scanner = $this->scanOne('a.ts', $code);
+
+		$this->assertSame(['Real'], $this->ids($scanner));
+		$this->assertSame([], $scanner->warnings());
+	}
+
 	public function testParsesNestedArgumentStructures(): void
 	{
 		$this->assertSame(
 			['Nested'],
-			$this->ids($this->scanOne('a.js', "__('Nested', foo(1, 2), [3, 4]);\n")),
+			$this->ids($this->scanOne('a.js', "__('Nested', foo(1, 2), [3, 4], /[),]/);\n")),
 		);
 	}
 

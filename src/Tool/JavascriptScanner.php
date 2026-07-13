@@ -14,8 +14,8 @@ namespace Celemas\Verba\Tool;
  * a literal attribute like `title="Delete"` is not mistaken for a call). In
  * `.vue`, `<script>` blocks are lexed the same way while the template treats
  * quoted attribute values as expression context, so `:title="__('Save')"` is
- * found. HTML comments are always skipped. Calls inside template-literal
- * interpolations are not extracted.
+ * found. HTML comments are always skipped. Template-literal interpolations
+ * are scanned as code while their raw text is skipped.
  *
  * @api
  */
@@ -109,7 +109,13 @@ final class JavascriptScanner extends FileScanner
 				continue;
 			}
 
-			if ($char === '`' || !$transparent && ($char === '"' || $char === "'")) {
+			if ($char === '`') {
+				$i = $this->scanTemplate($code, $i, $file, $lineBase);
+
+				continue;
+			}
+
+			if (!$transparent && ($char === '"' || $char === "'")) {
 				$i = $this->skipString($code, $i, $char);
 
 				continue;
@@ -145,7 +151,11 @@ final class JavascriptScanner extends FileScanner
 			return $end;
 		}
 
-		$open = $this->skipSpace($code, $end);
+		if ($this->isFunctionDeclaration($code, $start)) {
+			return $end;
+		}
+
+		$open = $this->skipTrivia($code, $end);
 
 		if ($open >= $length || $code[$open] !== '(') {
 			return $end;
@@ -155,6 +165,11 @@ final class JavascriptScanner extends FileScanner
 		$this->emit($name, $args, $file . ':' . ($lineBase + substr_count($code, "\n", 0, $start) + 1));
 
 		return $end;
+	}
+
+	private function isFunctionDeclaration(string $code, int $start): bool
+	{
+		return preg_match('/\bfunction\s*\*?\s*$/', substr($code, 0, $start)) === 1;
 	}
 
 	/**
@@ -171,8 +186,10 @@ final class JavascriptScanner extends FileScanner
 		while ($i < $length) {
 			$char = $code[$i];
 
-			if ($char === '"' || $char === "'" || $char === '`') {
-				$i = $this->skipString($code, $i, $char);
+			$after = $this->skipRegion($code, $i);
+
+			if ($after !== null) {
+				$i = $after;
 
 				continue;
 			}
@@ -213,22 +230,22 @@ final class JavascriptScanner extends FileScanner
 
 	private function literal(string $raw): ?string
 	{
-		$raw = trim($raw);
+		$length = strlen($raw);
+		$i = $this->skipTrivia($raw, 0);
 
-		if ($raw === '') {
+		if ($i >= $length) {
 			return null;
 		}
 
-		$quote = $raw[0];
+		$quote = $raw[$i];
 
 		if ($quote !== '"' && $quote !== "'" && $quote !== '`') {
 			return null;
 		}
 
-		$length = strlen($raw);
 		$value = '';
 
-		for ($i = 1; $i < $length; $i++) {
+		for ($i++; $i < $length; $i++) {
 			$char = $raw[$i];
 
 			if ($char === '\\') {
@@ -242,7 +259,7 @@ final class JavascriptScanner extends FileScanner
 			}
 
 			if ($char === $quote) {
-				return $i === ($length - 1) ? $value : null;
+				return $this->skipTrivia($raw, $i + 1) === $length ? $value : null;
 			}
 
 			$value .= $char;
@@ -361,6 +378,43 @@ final class JavascriptScanner extends FileScanner
 		return chr(hexdec($hex));
 	}
 
+	private function scanTemplate(string $code, int $i, string $file, int $lineBase): int
+	{
+		$length = strlen($code);
+
+		for ($i++; $i < $length; $i++) {
+			$char = $code[$i];
+
+			if ($char === '\\') {
+				$i++;
+
+				continue;
+			}
+
+			if ($char === '$' && ($code[$i + 1] ?? '') === '{') {
+				$start = $i + 2;
+				$after = $this->skipBraces($code, $i + 1);
+				$end = ($code[$after - 1] ?? '') === '}' ? $after - 1 : $after;
+
+				$this->collect(
+					substr($code, $start, $end - $start),
+					$file,
+					$lineBase + substr_count($code, "\n", 0, $start),
+					false,
+				);
+				$i = $after - 1;
+
+				continue;
+			}
+
+			if ($char === '`') {
+				return $i + 1;
+			}
+		}
+
+		return $length;
+	}
+
 	private function skipString(string $code, int $i, string $quote): int
 	{
 		$length = strlen($code);
@@ -388,6 +442,29 @@ final class JavascriptScanner extends FileScanner
 		return $length;
 	}
 
+	private function skipRegion(string $code, int $i): ?int
+	{
+		$pair = substr($code, $i, 2);
+
+		if ($pair === '//') {
+			return $this->skipTo($code, $i + 2, "\n");
+		}
+
+		if ($pair === '/*') {
+			return $this->skipTo($code, $i + 2, '*/');
+		}
+
+		$char = $code[$i];
+
+		if ($char === '/' && $this->startsRegex($code, $i)) {
+			return $this->skipRegex($code, $i);
+		}
+
+		return $char === '"' || $char === "'" || $char === '`'
+			? $this->skipString($code, $i, $char)
+			: null;
+	}
+
 	private function skipBraces(string $code, int $i): int
 	{
 		$length = strlen($code);
@@ -396,8 +473,10 @@ final class JavascriptScanner extends FileScanner
 		while ($i < $length) {
 			$char = $code[$i];
 
-			if ($char === '"' || $char === "'" || $char === '`') {
-				$i = $this->skipString($code, $i, $char);
+			$after = $this->skipRegion($code, $i);
+
+			if ($after !== null) {
+				$i = $after;
 
 				continue;
 			}
@@ -522,6 +601,31 @@ final class JavascriptScanner extends FileScanner
 		$at = strpos($code, $needle, $from);
 
 		return $at === false ? strlen($code) : $at + strlen($needle);
+	}
+
+	private function skipTrivia(string $code, int $i): int
+	{
+		$length = strlen($code);
+
+		while ($i < $length) {
+			$i = $this->skipSpace($code, $i);
+
+			if (substr($code, $i, 2) === '//') {
+				$i = $this->skipTo($code, $i + 2, "\n");
+
+				continue;
+			}
+
+			if (substr($code, $i, 2) === '/*') {
+				$i = $this->skipTo($code, $i + 2, '*/');
+
+				continue;
+			}
+
+			return $i;
+		}
+
+		return $i;
 	}
 
 	private function skipSpace(string $code, int $i): int
