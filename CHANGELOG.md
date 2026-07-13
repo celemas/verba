@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased](https://codeberg.org/celemas/verba/commits/branch/main)
+## [Unreleased](https://codeberg.org/celemas/verba/compare/0.1.0...HEAD)
+
+No notable changes since the last release.
+
+## [0.1.0](https://codeberg.org/celemas/verba/src/tag/0.1.0) (2026-07-13)
 
 Initial version.
 
