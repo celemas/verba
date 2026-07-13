@@ -18,6 +18,8 @@ Verba keeps the workflow you know from gettext — mark strings in code, extract
 
 The interchange format is plain PHP arrays, not `.po`/`.mo`, and there is no fuzzy matching: a changed message id is simply a new entry.
 
+Verba translates messages; it does not format numbers, dates, or currency. That is localization, and PHP already has the ICU-backed tool for it — `ext-intl` (`NumberFormatter`, `IntlDateFormatter`, `MessageFormatter`), the PHP counterpart to Babel. Verba deliberately stays out of it: formatting needs CLDR data and the intl extension, which would undo its "no extension, no system locales" premise. Pair the two when you need both.
+
 ## Marking strings
 
 Four global functions are always available:
@@ -39,6 +41,13 @@ __('Found %d results', $count);
 In `__n`/`__dn`, `:count` is bound to the count automatically, so `__n(':count file', ':count files', $n)` needs no extra argument.
 
 With no translator active the functions return the message id itself (after interpolation), so calls are safe in tests, CLI, and early boot.
+
+### Escaping
+
+Verba does not escape anything — it cannot, since the same catalog feeds HTML, attributes, JSON, and the terminal, and only the boundary that emits a string knows the right encoding. Two rules follow:
+
+- **Translations are trusted, author-controlled content.** A `msgstr` may contain markup (`<strong>`, links) on purpose; Verba passes it through untouched. Your template decides whether the result is rendered as raw HTML.
+- **Placeholder values are inserted verbatim.** A `:name` value goes in as-is, so escape untrusted input for its output context at the call site: `__('Hi :name', ['name' => htmlspecialchars($user->name)])` for HTML, and no escaping for CLI.
 
 ## Runtime
 
