@@ -30,6 +30,10 @@ class JavascriptScannerTest extends TestCase
 			__n('one', 'many', count);
 			__d('shop', 'B');
 			__dn('shop', 'o', 'm', count);
+			__p('menu', 'Open');
+			__np('inventory', 'result', 'results', count);
+			__dp('shop', 'button', 'Buy');
+			__dnp('shop', 'orders', 'sale', 'sales', count);
 			JS;
 
 		$scanner = $this->scanOne('a.js', $code);
@@ -45,6 +49,13 @@ class JavascriptScannerTest extends TestCase
 		$this->assertSame('shop', $byId['B']->domain);
 		$this->assertSame('shop', $byId['o']->domain);
 		$this->assertSame('m', $byId['o']->plural);
+		$this->assertSame('menu', $byId['Open']->context);
+		$this->assertSame('inventory', $byId['result']->context);
+		$this->assertSame('results', $byId['result']->plural);
+		$this->assertSame('button', $byId['Buy']->context);
+		$this->assertSame('shop', $byId['Buy']->domain);
+		$this->assertSame('orders', $byId['sale']->context);
+		$this->assertSame('sales', $byId['sale']->plural);
 	}
 
 	public function testSkipsStringsAndComments(): void
@@ -123,6 +134,10 @@ class JavascriptScannerTest extends TestCase
 			export function __n(one, many, n) { return one; }
 			function* __d(domain, id) { yield id; }
 			declare function __dn(domain, one, many, n): string;
+			function __p(context, id) { return id; }
+			function __np(context, one, many, n) { return one; }
+			function __dp(domain, context, id) { return id; }
+			function __dnp(domain, context, one, many, n) { return one; }
 			__('Real');
 			TS;
 
@@ -223,10 +238,17 @@ class JavascriptScannerTest extends TestCase
 
 	public function testWarnsOnNonLiteralArguments(): void
 	{
-		$scanner = $this->scanOne('a.js', "__(\$dyn);\n__('a' + b);\n__();\n");
+		$scanner = $this->scanOne(
+			'a.js',
+			"__(\$dyn);\n__('a' + b);\n__p(context, 'x');\n__();\n",
+		);
 
 		$this->assertSame([], $scanner->scan());
-		$this->assertCount(3, $scanner->warnings());
+		$this->assertCount(4, $scanner->warnings());
+		$this->assertStringContainsString(
+			'Non-literal context',
+			implode("\n", $scanner->warnings()),
+		);
 	}
 
 	public function testHandlesUnterminatedRegions(): void

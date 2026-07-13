@@ -11,4 +11,20 @@ return [
 		'single plural' => 'Einzeln',
 		'Untranslated' => null,
 	],
+	'contexts' => [
+		'' => [
+			'Open' => 'Ohne Kontextname',
+		],
+		'inventory' => [
+			'Found one product' => ['Ein Kontextprodukt', '%d Kontextprodukte'],
+		],
+		'menu' => [
+			'Add to cart' => 'Menü-Warenkorb',
+			'Open' => 'Öffnen',
+			'Untranslated' => null,
+		],
+		'state' => [
+			'Open' => 'Offen',
+		],
+	],
 ];

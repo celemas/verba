@@ -62,6 +62,56 @@ class SyncTest extends TestCase
 		$this->assertSame(2, $report->locales['de']['obsolete']);
 	}
 
+	public function testAddsAndPreservesContextualMessages(): void
+	{
+		$this->write('src/x.php', "<?php\n__p('menu', 'Open');\n__p('state', 'Open');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => [], 'contexts' => ['menu' => ['Open' => 'Öffnen']]];\n",
+		);
+
+		$report = new Sync($this->domain())->run();
+		$catalog = $this->catalog();
+
+		$this->assertSame('Öffnen', $catalog->contexts['menu']['Open']);
+		$this->assertNull($catalog->contexts['state']['Open']);
+		$this->assertSame(1, $report->locales['de']['added']);
+		$this->assertSame(2, $report->locales['de']['total']);
+	}
+
+	public function testRestoresContextualMessage(): void
+	{
+		$this->write('src/x.php', "<?php\n__p('menu', 'Back');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => [], "
+			. "'obsolete_contexts' => ['menu' => ['Back' => 'Zurück']]];\n",
+		);
+
+		new Sync($this->domain())->run();
+		$catalog = $this->catalog();
+
+		$this->assertSame('Zurück', $catalog->contexts['menu']['Back']);
+		$this->assertSame([], $catalog->obsoleteContexts);
+	}
+
+	public function testParksContextualMessage(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['A' => 'Ae'], "
+			. "'contexts' => ['menu' => ['Gone' => 'Weg']]];\n",
+		);
+
+		$report = new Sync($this->domain())->run();
+		$catalog = $this->catalog();
+
+		$this->assertSame([], $catalog->contexts);
+		$this->assertSame(['menu' => ['Gone' => 'Weg']], $catalog->obsoleteContexts);
+		$this->assertSame(1, $report->locales['de']['obsolete']);
+	}
+
 	public function testSecondRunIsIdempotent(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");
@@ -78,13 +128,18 @@ class SyncTest extends TestCase
 		$this->write('src/x.php', "<?php\n__('A');\n");
 		$this->write(
 			'i18n/app.de.php',
-			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg']];\n",
+			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg'], "
+			. "'contexts' => ['menu' => ['Old' => 'Alt']], "
+			. "'obsolete_contexts' => ['state' => ['Old' => 'Alt']]];\n",
 		);
 
 		new Sync($this->domain(), prune: true)->run();
+		$catalog = $this->catalog();
 
-		$this->assertSame(['A' => 'Ae'], $this->catalog()->messages);
-		$this->assertSame([], $this->catalog()->obsolete);
+		$this->assertSame(['A' => 'Ae'], $catalog->messages);
+		$this->assertSame([], $catalog->obsolete);
+		$this->assertSame([], $catalog->contexts);
+		$this->assertSame([], $catalog->obsoleteContexts);
 	}
 
 	public function testThrowsWhenCatalogDirectoryCannotBeCreated(): void

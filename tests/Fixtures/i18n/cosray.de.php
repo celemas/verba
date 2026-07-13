@@ -7,4 +7,9 @@ return [
 		'Add to cart' => 'COSRAY Warenkorb',
 		'node:new' => 'Neuer Knoten',
 	],
+	'contexts' => [
+		'menu' => [
+			'Open' => 'COSRAY Öffnen',
+		],
+	],
 ];

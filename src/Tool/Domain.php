@@ -7,7 +7,7 @@ namespace Celemas\Verba\Tool;
 /**
  * A translation domain: its catalog directory, the locales it maintains, and
  * the scanners that discover its messages. The default domain also receives
- * bare `__`/`__n` calls (those without an explicit domain).
+ * bare translation calls (those without an explicit domain).
  *
  * @api
  */

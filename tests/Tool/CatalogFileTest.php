@@ -15,6 +15,8 @@ class CatalogFileTest extends TestCase
 
 		$this->assertSame([], $catalog->messages);
 		$this->assertSame([], $catalog->obsolete);
+		$this->assertSame([], $catalog->contexts);
+		$this->assertSame([], $catalog->obsoleteContexts);
 		$this->assertNull($catalog->plural);
 	}
 
@@ -29,12 +31,17 @@ class CatalogFileTest extends TestCase
 	{
 		$file = $this->write(
 			'app.de.php',
-			"<?php\nreturn ['plural' => 'ru', 'messages' => ['A' => 'Ae'], 'obsolete' => ['B' => 'Be']];\n",
+			"<?php\nreturn ["
+			. "'plural' => 'ru', 'messages' => ['A' => 'Ae'], 'obsolete' => ['B' => 'Be'], "
+			. "'contexts' => ['menu' => ['Open' => 'Öffnen']], "
+			. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
 		);
 		$catalog = CatalogFile::load($file);
 
 		$this->assertSame(['A' => 'Ae'], $catalog->messages);
 		$this->assertSame(['B' => 'Be'], $catalog->obsolete);
+		$this->assertSame(['menu' => ['Open' => 'Öffnen']], $catalog->contexts);
+		$this->assertSame(['menu' => ['Old' => 'Alt']], $catalog->obsoleteContexts);
 		$this->assertSame('ru', $catalog->plural);
 	}
 
@@ -54,22 +61,52 @@ class CatalogFileTest extends TestCase
 			"quote's" => 'back\\slash',
 		];
 		$obsolete = ['gone' => 'weg'];
-		$rendered = new CatalogFile($messages, $obsolete, 'ru')->render();
+		$contexts = [
+			'state' => ['Open' => 'Offen'],
+			'menu' => ['Open' => 'Öffnen', 'unused' => null],
+		];
+		$obsoleteContexts = ['menu' => ['Old' => 'Alt']];
+		$rendered = new CatalogFile(
+			$messages,
+			$obsolete,
+			'ru',
+			$contexts,
+			$obsoleteContexts,
+		)->render();
 
 		$reloaded = CatalogFile::load($this->write('out.php', $rendered));
 		ksort($messages, SORT_STRING);
 
 		$this->assertSame($messages, $reloaded->messages);
 		$this->assertSame($obsolete, $reloaded->obsolete);
+		$this->assertSame(
+			['menu' => $contexts['menu'], 'state' => $contexts['state']],
+			$reloaded->contexts,
+		);
+		$this->assertSame($obsoleteContexts, $reloaded->obsoleteContexts);
 		$this->assertSame('ru', $reloaded->plural);
 	}
 
 	public function testRenderWithoutPluralOrObsolete(): void
 	{
-		$rendered = new CatalogFile(['a' => 'A'], [], null)->render();
+		$rendered = new CatalogFile(['a' => 'A'], [], null, ['empty' => []], ['empty' => []])->render();
 
 		$this->assertStringNotContainsString('plural', $rendered);
 		$this->assertStringNotContainsString('obsolete', $rendered);
+		$this->assertStringNotContainsString('contexts', $rendered);
 		$this->assertSame(['a' => 'A'], CatalogFile::load($this->write('out.php', $rendered))->messages);
+	}
+
+	public function testLoadIgnoresMalformedContextSections(): void
+	{
+		$file = $this->write(
+			'app.de.php',
+			"<?php\nreturn ['contexts' => ['good' => ['A' => 'B'], 'bad' => 'x', 3 => []], "
+			. "'obsolete_contexts' => 'bad'];\n",
+		);
+		$catalog = CatalogFile::load($file);
+
+		$this->assertSame(['good' => ['A' => 'B']], $catalog->contexts);
+		$this->assertSame([], $catalog->obsoleteContexts);
 	}
 }

@@ -1,7 +1,20 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { Translator } from '../src/translator.js';
-import { __, __d, __dn, __n, activate, deactivate, load, translator } from '../src/verba.js';
+import {
+	__,
+	__d,
+	__dn,
+	__dnp,
+	__dp,
+	__n,
+	__np,
+	__p,
+	activate,
+	deactivate,
+	load,
+	translator,
+} from '../src/verba.js';
 
 const payload = {
 	locale: 'de',
@@ -12,6 +25,10 @@ const payload = {
 			messages: {
 				Save: 'Speichern',
 				':count file': [':count Datei', ':count Dateien'],
+			},
+			contexts: {
+				inventory: { ':count file': [':count Kontextdatei', ':count Kontextdateien'] },
+				menu: { Open: 'Öffnen' },
 			},
 		},
 	],
@@ -38,6 +55,10 @@ describe('the global functions', () => {
 		expect(__n(':count file', ':count files', 2)).toBe('2 files');
 		expect(__d('app', 'Save')).toBe('Save');
 		expect(__dn('app', ':count file', ':count files', 2)).toBe('2 files');
+		expect(__p('menu', 'Open')).toBe('Open');
+		expect(__np('inventory', ':count file', ':count files', 2)).toBe('2 files');
+		expect(__dp('app', 'menu', 'Open')).toBe('Open');
+		expect(__dnp('app', 'inventory', ':count file', ':count files', 2)).toBe('2 files');
 	});
 
 	it('route through the active translator', () => {
@@ -49,6 +70,10 @@ describe('the global functions', () => {
 		expect(__n(':count file', ':count files', 2)).toBe('2 Dateien');
 		expect(__d('app', 'Save')).toBe('Speichern');
 		expect(__dn('app', ':count file', ':count files', 1)).toBe('1 Datei');
+		expect(__p('menu', 'Open')).toBe('Öffnen');
+		expect(__np('inventory', ':count file', ':count files', 2)).toBe('2 Kontextdateien');
+		expect(__dp('app', 'menu', 'Open')).toBe('Öffnen');
+		expect(__dnp('app', 'inventory', ':count file', ':count files', 1)).toBe('1 Kontextdatei');
 	});
 
 	it('fall back again after deactivation', () => {

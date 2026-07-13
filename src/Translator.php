@@ -57,15 +57,15 @@ final class Translator
 	 */
 	public function translate(string $id, array $args = []): string
 	{
-		foreach ($this->order as $domain) {
-			$entry = $this->entry($domain, $id);
+		return $this->translateFrom(null, $id, $args);
+	}
 
-			if ($entry !== null) {
-				return Interpolate::apply($entry, $args);
-			}
-		}
-
-		return Interpolate::apply($id, $args);
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	public function translateContext(string $context, string $id, array $args = []): string
+	{
+		return $this->translateFrom($context, $id, $args);
 	}
 
 	/**
@@ -73,9 +73,19 @@ final class Translator
 	 */
 	public function translateDomain(string $domain, string $id, array $args = []): string
 	{
-		$entry = array_key_exists($domain, $this->domains) ? $this->entry($domain, $id) : null;
+		return $this->translateDomainFrom($domain, null, $id, $args);
+	}
 
-		return Interpolate::apply($entry ?? $id, $args);
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	public function translateDomainContext(
+		string $domain,
+		string $context,
+		string $id,
+		array $args = [],
+	): string {
+		return $this->translateDomainFrom($domain, $context, $id, $args);
 	}
 
 	/**
@@ -83,15 +93,20 @@ final class Translator
 	 */
 	public function translatePlural(string $one, string $many, int $n, array $args = []): string
 	{
-		foreach ($this->order as $domain) {
-			$form = $this->pluralEntry($domain, $one, $n, $args);
+		return $this->translatePluralFrom(null, $one, $many, $n, $args);
+	}
 
-			if ($form !== null) {
-				return $form;
-			}
-		}
-
-		return Interpolate::apply($n === 1 ? $one : $many, self::pluralArgs($args, $n));
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	public function translateContextPlural(
+		string $context,
+		string $one,
+		string $many,
+		int $n,
+		array $args = [],
+	): string {
+		return $this->translatePluralFrom($context, $one, $many, $n, $args);
 	}
 
 	/**
@@ -104,8 +119,91 @@ final class Translator
 		int $n,
 		array $args = [],
 	): string {
+		return $this->translateDomainPluralFrom($domain, null, $one, $many, $n, $args);
+	}
+
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	// @mago-expect lint:excessive-parameter-list Contextual domain plurals need all five lookup inputs.
+	public function translateDomainContextPlural(
+		string $domain,
+		string $context,
+		string $one,
+		string $many,
+		int $n,
+		array $args = [],
+	): string {
+		return $this->translateDomainPluralFrom($domain, $context, $one, $many, $n, $args);
+	}
+
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	private function translateFrom(?string $context, string $id, array $args): string
+	{
+		foreach ($this->order as $domain) {
+			$entry = $this->entry($domain, $id, $context);
+
+			if ($entry !== null) {
+				return Interpolate::apply($entry, $args);
+			}
+		}
+
+		return Interpolate::apply($id, $args);
+	}
+
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	private function translateDomainFrom(
+		string $domain,
+		?string $context,
+		string $id,
+		array $args,
+	): string {
+		$entry = array_key_exists($domain, $this->domains)
+			? $this->entry($domain, $id, $context)
+			: null;
+
+		return Interpolate::apply($entry ?? $id, $args);
+	}
+
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	private function translatePluralFrom(
+		?string $context,
+		string $one,
+		string $many,
+		int $n,
+		array $args,
+	): string {
+		foreach ($this->order as $domain) {
+			$form = $this->pluralEntry($domain, $one, $n, $args, $context);
+
+			if ($form !== null) {
+				return $form;
+			}
+		}
+
+		return Interpolate::apply($n === 1 ? $one : $many, self::pluralArgs($args, $n));
+	}
+
+	/**
+	 * @param array<array-key, string|int|float> $args
+	 */
+	// @mago-expect lint:excessive-parameter-list Shared path for domain plurals with optional context.
+	private function translateDomainPluralFrom(
+		string $domain,
+		?string $context,
+		string $one,
+		string $many,
+		int $n,
+		array $args,
+	): string {
 		$form = array_key_exists($domain, $this->domains)
-			? $this->pluralEntry($domain, $one, $n, $args)
+			? $this->pluralEntry($domain, $one, $n, $args, $context)
 			: null;
 
 		return $form ?? Interpolate::apply($n === 1 ? $one : $many, self::pluralArgs($args, $n));
@@ -117,7 +215,11 @@ final class Translator
 	 * consulted here — {@see self::exportMany()} ships the whole resolution
 	 * chain. Empty when the domain is not part of this translator's cascade.
 	 *
-	 * @return array{plural: string, messages: array<string, string|list<string>>}
+	 * @return array{
+	 *     plural: string,
+	 *     messages: array<string, string|list<string>>,
+	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 * }
 	 */
 	public function export(string $domain): array
 	{
@@ -137,7 +239,15 @@ final class Translator
 	 * for the browser — the payload ends up world-readable in the page source.
 	 *
 	 * @param list<string> $domains
-	 * @return array{locale: string, domains: list<array{domain: string, plural: string, messages: array<string, string|list<string>>}>}
+	 * @return array{
+	 *     locale: string,
+	 *     domains: list<array{
+	 *         domain: string,
+	 *         plural: string,
+	 *         messages: array<string, string|list<string>>,
+	 *         contexts?: array<string, array<string, string|list<string>>>,
+	 *     }>,
+	 * }
 	 */
 	public function exportMany(array $domains): array
 	{
@@ -162,48 +272,89 @@ final class Translator
 	 * list only a string can still win (for singular lookups). Fallback entries
 	 * with nothing left to add are dropped entirely.
 	 *
-	 * @return list<array{domain: string, plural: string, messages: array<string, string|list<string>>}>
+	 * @return list<array{
+	 *     domain: string,
+	 *     plural: string,
+	 *     messages: array<string, string|list<string>>,
+	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 * }>
 	 */
 	private function domainExports(string $domain): array
 	{
 		$exports = [];
 
-		/** @var array<string, bool> $placed True when a placed id is a string, false for a form list. */
+		/** @var array<string, bool> $placed */
 		$placed = [];
+
+		/** @var array<string, array<string, bool>> $placedContexts */
+		$placedContexts = [];
 
 		foreach ($this->locales as $i => $locale) {
 			$export = $this->catalog($domain, $locale)->export();
-			$messages = [];
+			$placement = self::place($export['messages'], $placed);
+			$messages = $placement['messages'];
+			$placed = $placement['placed'];
+			$contexts = [];
 
-			foreach ($export['messages'] as $id => $message) {
-				$stringPlaced = $placed[$id] ?? null;
+			foreach ($export['contexts'] ?? [] as $context => $contextMessages) {
+				$placement = self::place($contextMessages, $placedContexts[$context] ?? []);
+				$placedContexts[$context] = $placement['placed'];
 
-				// A placed string is final; behind a form list only a string adds value.
-				if ($stringPlaced === true || $stringPlaced === false && !is_string($message)) {
-					continue;
+				if ($placement['messages'] !== []) {
+					$contexts[$context] = $placement['messages'];
 				}
-
-				$messages[$id] = $message;
-				$placed[$id] = is_string($message);
 			}
 
-			if ($i > 0 && $messages === []) {
+			if ($i > 0 && $messages === [] && $contexts === []) {
 				continue;
 			}
 
-			$exports[] = ['domain' => $domain, 'plural' => $export['plural'], 'messages' => $messages];
+			$entry = ['domain' => $domain, 'plural' => $export['plural'], 'messages' => $messages];
+
+			if ($contexts !== []) {
+				$entry['contexts'] = $contexts;
+			}
+
+			$exports[] = $entry;
 		}
 
 		return $exports;
 	}
 
 	/**
+	 * @param array<string, string|list<string>> $messages
+	 * @param array<string, bool> $placed True for a string, false for a form list.
+	 * @return array{
+	 *     messages: array<string, string|list<string>>,
+	 *     placed: array<string, bool>,
+	 * }
+	 */
+	private static function place(array $messages, array $placed): array
+	{
+		$reachable = [];
+
+		foreach ($messages as $id => $message) {
+			$stringPlaced = $placed[$id] ?? null;
+
+			// A placed string is final; behind a form list only a string adds value.
+			if ($stringPlaced === true || $stringPlaced === false && !is_string($message)) {
+				continue;
+			}
+
+			$reachable[$id] = $message;
+			$placed[$id] = is_string($message);
+		}
+
+		return ['messages' => $reachable, 'placed' => $placed];
+	}
+
+	/**
 	 * The first string translation for $id across the locale chain, or null.
 	 */
-	private function entry(string $domain, string $id): ?string
+	private function entry(string $domain, string $id, ?string $context): ?string
 	{
 		foreach ($this->locales as $locale) {
-			$entry = $this->catalog($domain, $locale)->get($id);
+			$entry = $this->catalog($domain, $locale)->get($id, $context);
 
 			if (is_string($entry)) {
 				return $entry;
@@ -219,10 +370,15 @@ final class Translator
 	 *
 	 * @param array<array-key, string|int|float> $args
 	 */
-	private function pluralEntry(string $domain, string $one, int $n, array $args): ?string
-	{
+	private function pluralEntry(
+		string $domain,
+		string $one,
+		int $n,
+		array $args,
+		?string $context,
+	): ?string {
 		foreach ($this->locales as $locale) {
-			$form = $this->pluralFrom($this->catalog($domain, $locale), $one, $n, $args);
+			$form = $this->pluralFrom($this->catalog($domain, $locale), $one, $n, $args, $context);
 
 			if ($form !== null) {
 				return $form;
@@ -238,9 +394,14 @@ final class Translator
 	 *
 	 * @param array<array-key, string|int|float> $args
 	 */
-	private function pluralFrom(Catalog $catalog, string $one, int $n, array $args): ?string
-	{
-		$entry = $catalog->get($one);
+	private function pluralFrom(
+		Catalog $catalog,
+		string $one,
+		int $n,
+		array $args,
+		?string $context,
+	): ?string {
+		$entry = $catalog->get($one, $context);
 
 		if (is_array($entry) && $entry !== []) {
 			$idx = $catalog->form($n);

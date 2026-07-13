@@ -7,9 +7,9 @@ namespace Celemas\Verba\Tool;
 use PhpToken;
 
 /**
- * Extracts `__`, `__n`, `__d`, and `__dn` calls from PHP source (including
- * Boiler templates) by walking the token stream — no parser, no regex. Only
- * literal string arguments are captured; a dynamic id, domain, or plural is
+ * Extracts Verba's eight translation calls from PHP source (including Boiler
+ * templates) by walking the token stream — no parser, no regex. Only literal
+ * string arguments are captured; a dynamic id, domain, context, or plural is
  * reported as a warning and skipped.
  *
  * @api

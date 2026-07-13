@@ -2,7 +2,9 @@
 
 ## [Unreleased](https://codeberg.org/celemas/verba/compare/0.1.0...HEAD)
 
-No notable changes since the last release.
+### Added
+
+- Added contextual translation across PHP and JavaScript with `__p`, `__np`, `__dp`, and `__dnp`, including nested catalog storage, extraction, synchronization, status reporting, locale fallback, and browser payload export.
 
 ## [0.1.0](https://codeberg.org/celemas/verba/src/tag/0.1.0) (2026-07-13)
 

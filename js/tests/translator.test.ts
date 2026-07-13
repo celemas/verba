@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Messages, type Payload, Translator } from '../src/translator.js';
+import { type Contexts, type Messages, type Payload, Translator } from '../src/translator.js';
 
 const shop = {
 	domain: 'shop',
@@ -11,6 +11,14 @@ const shop = {
 		':count item': [':count Artikel', ':count Artikel'],
 		'single plural': 'Einzeln',
 	},
+	contexts: {
+		'': { Open: 'Ohne Kontextname' },
+		inventory: {
+			'Found one product': ['Ein Kontextprodukt', ':count Kontextprodukte'],
+		},
+		menu: { Open: 'Öffnen' },
+		state: { Open: 'Offen' },
+	},
 };
 
 const cosray = {
@@ -19,6 +27,9 @@ const cosray = {
 	messages: {
 		'Add to cart': 'COSRAY Warenkorb',
 		'node:new': 'Neuer Knoten',
+	},
+	contexts: {
+		menu: { Open: 'COSRAY Öffnen' },
 	},
 };
 
@@ -59,10 +70,19 @@ describe('Translator', () => {
 		expect(new Translator(cascade).translate('Found one product')).toBe('Found one product');
 	});
 
-	it('tolerates messages encoded as an empty array', () => {
-		const t = new Translator({ domains: [{ domain: 'x', messages: [] as unknown as Messages }] });
+	it('tolerates maps encoded as empty arrays', () => {
+		const t = new Translator({
+			domains: [
+				{
+					domain: 'x',
+					messages: [] as unknown as Messages,
+					contexts: [] as unknown as Contexts,
+				},
+			],
+		});
 
 		expect(t.translate('Add to cart')).toBe('Add to cart');
+		expect(t.translateContext('menu', 'Open')).toBe('Open');
 	});
 
 	it('pins a domain', () => {
@@ -170,6 +190,48 @@ describe('Translator', () => {
 
 		expect(t.translateDomainPlural('shop', 'nomatch', 'nomatches', 1)).toBe('nomatch');
 	});
+
+	it('distinguishes exact contexts from uncontextual messages', () => {
+		const t = new Translator(cascade);
+
+		expect(t.translateContext('menu', 'Open')).toBe('Öffnen');
+		expect(t.translateContext('state', 'Open')).toBe('Offen');
+		expect(t.translateContext('', 'Open')).toBe('Ohne Kontextname');
+		expect(t.translateContext('missing', 'Add to cart')).toBe('Add to cart');
+	});
+
+	it('pins a domain for contextual messages', () => {
+		const t = new Translator(cascade);
+
+		expect(t.translateDomainContext('cosray', 'menu', 'Open')).toBe('COSRAY Öffnen');
+		expect(t.translateDomainContext('missing', 'menu', 'Open')).toBe('Open');
+	});
+
+	it('translates contextual plurals', () => {
+		const t = new Translator(cascade);
+
+		expect(
+			t.translateContextPlural('inventory', 'Found one product', 'Found :count products', 3),
+		).toBe('3 Kontextprodukte');
+		expect(
+			t.translateDomainContextPlural(
+				'shop',
+				'inventory',
+				'Found one product',
+				'Found :count products',
+				1,
+			),
+		).toBe('Ein Kontextprodukt');
+	});
+
+	it('falls back from contextual plural misses', () => {
+		const t = new Translator(cascade);
+
+		expect(t.translateContextPlural('missing', ':count thing', ':count things', 2)).toBe(
+			'2 things',
+		);
+		expect(t.translateDomainContextPlural('missing', 'inventory', 'one', 'many', 1)).toBe('one');
+	});
 });
 
 describe('Translator with a locale fallback chain', () => {
@@ -178,13 +240,25 @@ describe('Translator with a locale fallback chain', () => {
 	const chain: Payload = {
 		locale: 'es',
 		domains: [
-			{ domain: 'app', plural: 'es', messages: { x: ['un', 'unos'] } },
+			{
+				domain: 'app',
+				plural: 'es',
+				messages: { x: ['un', 'unos'] },
+				contexts: { state: { Open: 'Abierto' } },
+			},
 			{
 				domain: 'app',
 				plural: 'ru',
 				messages: {
 					x: 'X-en',
 					thing: [':count thing one', ':count thing few', ':count thing many'],
+				},
+				contexts: {
+					inventory: {
+						thing: [':count contextual one', ':count contextual few', ':count contextual many'],
+					},
+					menu: { Open: 'Open menu' },
+					state: { Open: 'Open state' },
 				},
 			},
 		],
@@ -209,6 +283,16 @@ describe('Translator with a locale fallback chain', () => {
 
 		expect(t.translatePlural('thing', 'things', 21)).toBe('21 thing one');
 		expect(t.translatePlural('thing', 'things', 5)).toBe('5 thing many');
+		expect(t.translateContextPlural('inventory', 'thing', 'things', 21)).toBe('21 contextual one');
+		expect(t.translateContextPlural('inventory', 'thing', 'things', 5)).toBe('5 contextual many');
+	});
+
+	it('resolves only the matching context across repeated domain entries', () => {
+		const t = new Translator(chain);
+
+		expect(t.translateContext('state', 'Open')).toBe('Abierto');
+		expect(t.translateContext('menu', 'Open')).toBe('Open menu');
+		expect(t.translateContext('other', 'Open')).toBe('Open');
 	});
 
 	it('keeps the domain cascade ahead of locale fallback', () => {

@@ -22,13 +22,17 @@ Verba translates messages; it does not format numbers, dates, or currency. That 
 
 ## Marking strings
 
-Four global functions are always available:
+Eight global functions are always available:
 
 ```php
-__('Save');                              // simple
-__n('one file', '%d files', $count);     // plural
-__d('shop', 'Checkout');                 // explicit domain
+__('Save');                                      // simple
+__n('one file', '%d files', $count);             // plural
+__p('button', 'Open');                           // context
+__np('inventory', 'one file', '%d files', $count);
+__d('shop', 'Checkout');                         // explicit domain
 __dn('shop', 'one order', '%d orders', $count);
+__dp('shop', 'button', 'Open');                  // domain + context
+__dnp('shop', 'inventory', 'one item', '%d items', $count);
 ```
 
 Arguments interpolate in one of two styles. A single array argument fills named `:placeholder` tokens; anything else is passed to `sprintf`:
@@ -38,7 +42,9 @@ __('Hello :name', ['name' => $user->name]);
 __('Found %d results', $count);
 ```
 
-In `__n`/`__dn`, `:count` is bound to the count automatically, so `__n(':count file', ':count files', $n)` needs no extra argument.
+In `__n`/`__np`/`__dn`/`__dnp`, `:count` is bound to the count automatically, so `__n(':count file', ':count files', $n)` needs no extra argument.
+
+A context distinguishes uses of the same message id without becoming part of the output. For example, German may translate `__p('menu', 'Open')` as `Öffnen` but `__p('state', 'Open')` as `Offen`. Context is an exact lookup axis: a miss never falls back to an uncontextual translation or another context.
 
 With no translator active the functions return the message id itself (after interpolation), so calls are safe in tests, CLI, and early boot.
 
@@ -67,7 +73,7 @@ Verba::activate($translator);         // wire the global functions
 Verba::deactivate();                  // reset (matters for long-running workers)
 ```
 
-`__d('cosray', …)` pins the `cosray` domain; bare `__(…)` searches the cascade.
+`__d('cosray', …)` and the other `__d*` helpers pin the `cosray` domain; bare helpers search the cascade. A domain selects a catalog, while a context selects a translation variant inside each catalog.
 
 A third argument names fallback locales, tried in order whenever the primary locale lacks a string. Resolution is per id and stays within a domain before the cascade continues, so the domain cascade outranks the locale fallback:
 
@@ -94,13 +100,21 @@ return [
         'one file' => ['%d Datei', '%d Dateien'], // plural forms
         'Not translated yet' => null,             // falls back to the id
     ],
+    'contexts' => [
+        'menu' => ['Open' => 'Öffnen'],
+        'state' => ['Open' => 'Offen'],
+    ],
     'obsolete' => [
-        'Old string' => 'Alter String',           // parked by sync, never loaded
+        'Old string' => 'Alter String', // parked by sync, never loaded
+    ],
+    'obsolete_contexts' => [
+        'menu' => ['Old command' => 'Alter Befehl'],
     ],
 ];
 ```
 
 - A `string` is a translation, a `list` holds the plural forms in rule order, and `null` marks a known-but-untranslated id.
+- `contexts` groups active translations by context; `obsolete_contexts` parks vanished contextual messages. Both use the same value types as `messages`.
 - Plural rules for common languages are built in. A catalog may borrow another language's rule with `'plural' => 'ru'`.
 
 ## Extraction
@@ -120,16 +134,16 @@ $app = new Domain(
         new PhpScanner([__DIR__ . '/src', __DIR__ . '/views']),
         new JavascriptScanner([__DIR__ . '/ui/src']),
     ],
-    default: true, // also receives bare __()/__n() calls
+    default: true, // also receives bare __()/__n()/__p()/__np() calls
 );
 ```
 
-- **`PhpScanner`** walks the PHP token stream — no parser, no regex — and reads `__`/`__n`/`__d`/`__dn` calls with literal string arguments. Boiler templates are PHP, so they are covered too.
-- **`JavascriptScanner`** reads `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue`. Only literal arguments are captured; a dynamic id is reported as a warning and skipped.
+- **`PhpScanner`** walks the PHP token stream — no parser, no regex — and reads all eight helpers with literal message, domain, context, and plural arguments. Boiler templates are PHP, so they are covered too.
+- **`JavascriptScanner`** reads `.js`, `.ts`, `.jsx`, `.tsx`, `.svelte`, and `.vue`. Only literal arguments are captured; a dynamic id, domain, context, or plural is reported as a warning and skipped.
 
 ## JavaScript runtime
 
-The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the same four functions, the same plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
+The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the same eight functions, contexts, plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
 
 ```php
 <script id="verba-catalog" type="application/json">
@@ -138,12 +152,13 @@ The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the 
 ```
 
 ```js
-import { __, __n, activate, load } from '@celemas/verba';
+import { __, __n, __p, activate, load } from '@celemas/verba';
 
 const translator = load(); // reads #verba-catalog, null during SSR
 if (translator) activate(translator);
 
 __('Save');
+__p('menu', 'Open');
 __n(':count file', ':count files', 3); // ':count' is bound automatically
 ```
 
@@ -161,7 +176,7 @@ $commands->add(new SyncCommand([$app]));
 $commands->add(new StatusCommand([$app]));
 ```
 
-- `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from `obsolete`, and a vanished id is parked there. Running it twice changes nothing. `--prune` drops the obsolete section.
+- `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections.
 - `i18n:status` — report per locale how many ids are missing, untranslated, translated, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps.
 
 ## License

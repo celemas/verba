@@ -216,6 +216,99 @@ class TranslatorTest extends TestCase
 		);
 	}
 
+	public function testContextDistinguishesSameMessageId(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame('Öffnen', $t->translateContext('menu', 'Open'));
+		$this->assertSame('Offen', $t->translateContext('state', 'Open'));
+		$this->assertSame('Ohne Kontextname', $t->translateContext('', 'Open'));
+	}
+
+	public function testContextMissDoesNotUseUncontextualTranslation(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame('Save', $t->translateContext('missing', 'Save'));
+		$this->assertSame('Hello Bob', $t->translateContext('missing', 'Hello :name', ['name' => 'Bob']));
+	}
+
+	public function testContextUsesDomainCascade(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame('Öffnen', $t->translateContext('menu', 'Open'));
+		$this->assertSame('COSRAY Öffnen', $t->translateDomainContext('cosray', 'menu', 'Open'));
+	}
+
+	public function testDomainContextUnknownOrMissingFallsBack(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame('Open', $t->translateDomainContext('missing', 'menu', 'Open'));
+		$this->assertSame('Save', $t->translateDomainContext('shop', 'missing', 'Save'));
+	}
+
+	public function testContextPluralUsesExactBucket(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame(
+			'3 Kontextprodukte',
+			$t->translateContextPlural('inventory', 'Found one product', '%d products', 3, [3]),
+		);
+		$this->assertSame(
+			'Ein Kontextprodukt',
+			$t->translateDomainContextPlural(
+				'shop',
+				'inventory',
+				'Found one product',
+				'%d products',
+				1,
+			),
+		);
+	}
+
+	public function testContextPluralMissesFallBackToCallSiteIds(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame(
+			'2 things',
+			$t->translateContextPlural('missing', ':count thing', ':count things', 2),
+		);
+		$this->assertSame(
+			'one',
+			$t->translateDomainContextPlural('missing', 'inventory', 'one', 'many', 1),
+		);
+	}
+
+	public function testFallbackResolvesExactContext(): void
+	{
+		$t = new Translator('es', ['ctx' => $this->i18n()], ['en']);
+
+		$this->assertSame('Abierto', $t->translateContext('state', 'Open'));
+		$this->assertSame('Open menu', $t->translateContext('menu', 'Open'));
+	}
+
+	public function testContextFallbackPluralUsesFallbackCatalogRule(): void
+	{
+		$t = new Translator('es', ['rfb' => $this->i18n()], ['ru']);
+
+		$this->assertSame('21 contextual one', $t->translateContextPlural(
+			'inventory',
+			'thing',
+			'things',
+			21,
+		));
+		$this->assertSame('5 contextual many', $t->translateContextPlural(
+			'inventory',
+			'thing',
+			'things',
+			5,
+		));
+	}
+
 	public function testFallbackPrefersPrimaryLocale(): void
 	{
 		$t = new Translator('es', ['fb' => $this->i18n()], ['en', 'de']);
@@ -322,6 +415,28 @@ class TranslatorTest extends TestCase
 		$t = new Translator('es', ['fb' => $this->i18n()], ['en', 'de']);
 
 		$this->assertSame(['plural' => 'es', 'messages' => ['a' => 'A-es']], $t->export('fb'));
+	}
+
+	public function testExportIncludesTranslatedContexts(): void
+	{
+		$t = new Translator('de', ['shop' => $this->i18n()]);
+		$export = $t->export('shop');
+
+		$this->assertSame('Öffnen', $export['contexts']['menu']['Open'] ?? null);
+		$this->assertArrayNotHasKey('Untranslated', $export['contexts']['menu'] ?? []);
+	}
+
+	public function testExportManyKeepsContextOnlyPrimaryAndFallbackEntries(): void
+	{
+		$t = new Translator('es', ['ctx' => $this->i18n()], ['en']);
+		$payload = $t->exportMany(['ctx']);
+
+		$this->assertCount(2, $payload['domains']);
+		$this->assertSame([], $payload['domains'][0]['messages']);
+		$this->assertSame('Abierto', $payload['domains'][0]['contexts']['state']['Open'] ?? null);
+		$this->assertSame([], $payload['domains'][1]['messages']);
+		$this->assertSame('Open menu', $payload['domains'][1]['contexts']['menu']['Open'] ?? null);
+		$this->assertArrayNotHasKey('state', $payload['domains'][1]['contexts'] ?? []);
 	}
 
 	public function testExportManyShipsFallbackChain(): void

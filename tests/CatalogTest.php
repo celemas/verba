@@ -50,6 +50,30 @@ class CatalogTest extends TestCase
 		$this->assertNull($catalog->get('Untranslated'));
 	}
 
+	public function testLoadsMessagesByExactContext(): void
+	{
+		$catalog = Catalog::load($this->i18n() . '/shop.de.php', 'de');
+
+		$this->assertSame('Öffnen', $catalog->get('Open', 'menu'));
+		$this->assertSame('Offen', $catalog->get('Open', 'state'));
+		$this->assertSame('Ohne Kontextname', $catalog->get('Open', ''));
+		$this->assertNull($catalog->get('Open'));
+		$this->assertNull($catalog->get('Open', 'missing'));
+	}
+
+	public function testIgnoresMalformedContexts(): void
+	{
+		$file = $this->write(
+			'bad-contexts.php',
+			"<?php\nreturn ['contexts' => ['good' => ['A' => 'B'], 'bad' => 'x', 3 => []]];\n",
+		);
+		$catalog = Catalog::load($file, 'de');
+
+		$this->assertSame('B', $catalog->get('A', 'good'));
+		$this->assertNull($catalog->get('A', 'bad'));
+		$this->assertNull($catalog->get('A', '3'));
+	}
+
 	public function testCatalogPluralOverrideWins(): void
 	{
 		$catalog = Catalog::load($this->i18n() . '/custom.xx.php', 'ru');
@@ -71,6 +95,14 @@ class CatalogTest extends TestCase
 					'Found one product' => ['Ein Produkt gefunden', '%d Produkte gefunden'],
 					':count item' => [':count Artikel', ':count Artikel'],
 					'single plural' => 'Einzeln',
+				],
+				'contexts' => [
+					'' => ['Open' => 'Ohne Kontextname'],
+					'inventory' => [
+						'Found one product' => ['Ein Kontextprodukt', '%d Kontextprodukte'],
+					],
+					'menu' => ['Add to cart' => 'Menü-Warenkorb', 'Open' => 'Öffnen'],
+					'state' => ['Open' => 'Offen'],
 				],
 			],
 			$catalog->export(),

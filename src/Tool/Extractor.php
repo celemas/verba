@@ -6,8 +6,8 @@ namespace Celemas\Verba\Tool;
 
 /**
  * Runs a domain's scanners, keeps the messages that belong to it, and merges
- * duplicates by id (unioning locations, preferring a plural form when any call
- * site supplied one).
+ * duplicates by context and id (unioning locations, preferring a plural form
+ * when any call site supplied one).
  *
  * @api
  */
@@ -18,11 +18,16 @@ final class Extractor
 	) {}
 
 	/**
-	 * @return array{messages: array<string, Message>, warnings: list<string>}
+	 * @return array{
+	 *     messages: array<string, Message>,
+	 *     contexts: array<string, array<string, Message>>,
+	 *     warnings: list<string>,
+	 * }
 	 */
 	public function extract(): array
 	{
 		$merged = [];
+		$contexts = [];
 		$warnings = [];
 
 		foreach ($this->domain->scanners as $scanner) {
@@ -31,14 +36,17 @@ final class Extractor
 					continue;
 				}
 
-				$existing = $merged[$message->id] ?? null;
-				$warning = $this->conflict($existing, $message);
-
-				if ($warning !== null) {
-					$warnings[] = $warning;
+				if ($message->context === null) {
+					$existing = $merged[$message->id] ?? null;
+					$merged[$message->id] = $this->merge($existing, $message, $warnings);
+				} else {
+					$existing = $contexts[$message->context][$message->id] ?? null;
+					$contexts[$message->context][$message->id] = $this->merge(
+						$existing,
+						$message,
+						$warnings,
+					);
 				}
-
-				$merged[$message->id] = $this->fold($existing, $message);
 			}
 
 			foreach ($scanner->warnings() as $warning) {
@@ -47,8 +55,29 @@ final class Extractor
 		}
 
 		ksort($merged, SORT_STRING);
+		ksort($contexts, SORT_STRING);
 
-		return ['messages' => $merged, 'warnings' => $warnings];
+		foreach ($contexts as &$messages) {
+			ksort($messages, SORT_STRING);
+		}
+
+		unset($messages);
+
+		return ['messages' => $merged, 'contexts' => $contexts, 'warnings' => $warnings];
+	}
+
+	/**
+	 * @param list<string> $warnings
+	 */
+	private function merge(?Message $existing, Message $next, array &$warnings): Message
+	{
+		$warning = $this->conflict($existing, $next);
+
+		if ($warning !== null) {
+			$warnings[] = $warning;
+		}
+
+		return $this->fold($existing, $next);
 	}
 
 	private function conflict(?Message $existing, Message $next): ?string
@@ -58,18 +87,23 @@ final class Extractor
 		}
 
 		$location = $next->locations[0] ?? 'unknown location';
+		$id = "message id '{$next->id}'";
 
-		if ($existing->plural === null || $next->plural === null) {
-			return "Mixed singular and plural calls for message id '{$next->id}' at {$location}";
+		if ($next->context !== null) {
+			$id .= " in context '{$next->context}'";
 		}
 
-		return "Conflicting plural forms for message id '{$next->id}' at {$location}";
+		if ($existing->plural === null || $next->plural === null) {
+			return "Mixed singular and plural calls for {$id} at {$location}";
+		}
+
+		return "Conflicting plural forms for {$id} at {$location}";
 	}
 
 	private function fold(?Message $existing, Message $next): Message
 	{
 		if ($existing === null) {
-			return new Message(null, $next->id, $next->plural, $next->locations);
+			return new Message(null, $next->id, $next->plural, $next->locations, $next->context);
 		}
 
 		return new Message(
@@ -77,6 +111,7 @@ final class Extractor
 			$next->id,
 			$existing->plural ?? $next->plural,
 			[...$existing->locations, ...$next->locations],
+			$next->context,
 		);
 	}
 }

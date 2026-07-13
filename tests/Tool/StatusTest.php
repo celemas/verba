@@ -55,6 +55,30 @@ class StatusTest extends TestCase
 		$this->assertCount(2, $fr['locations']);
 	}
 
+	public function testReportsContextualGapsAndObsoleteEntries(): void
+	{
+		$this->write(
+			'src/x.php',
+			"<?php\n__p('menu', 'Open');\n__p('state', 'Open');\n__p('menu', 'Save');\n",
+		);
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => [], "
+			. "'contexts' => ['menu' => ['Open' => 'Öffnen', 'Save' => null, 'Extra' => 'X'], "
+			. "'wrong' => ['Open' => 'Falsch']], "
+			. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
+		);
+
+		$de = new Status($this->domain(['de']))->run()->locales['de'];
+
+		$this->assertSame(1, $de['translated']);
+		$this->assertSame(1, $de['untranslated']);
+		$this->assertSame(1, $de['missing']);
+		$this->assertSame(3, $de['obsolete']);
+		$this->assertSame(3, $de['total']);
+		$this->assertCount(2, $de['locations']);
+	}
+
 	public function testCleanWhenFullyTranslated(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");

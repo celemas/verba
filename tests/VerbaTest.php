@@ -30,6 +30,30 @@ class VerbaTest extends TestCase
 		$this->assertSame('2 things', Verba::translatePlural(':count thing', ':count things', 2));
 	}
 
+	public function testFallbackContextReturnsId(): void
+	{
+		$this->assertSame('Hello Bob', Verba::translateContext('menu', 'Hello :name', ['name' => 'Bob']));
+		$this->assertSame(
+			'2 things',
+			Verba::translateContextPlural('menu', ':count thing', ':count things', 2),
+		);
+	}
+
+	public function testFallbackDomainContextReturnsId(): void
+	{
+		$this->assertSame('Open', Verba::translateDomainContext('app', 'menu', 'Open'));
+		$this->assertSame(
+			'2 things',
+			Verba::translateDomainContextPlural(
+				'app',
+				'menu',
+				':count thing',
+				':count things',
+				2,
+			),
+		);
+	}
+
 	public function testActivateExposesTranslator(): void
 	{
 		$t = $this->translator();
@@ -69,6 +93,31 @@ class VerbaTest extends TestCase
 		$this->assertSame(
 			'Ein Produkt gefunden',
 			Verba::translateDomainPlural('shop', 'Found one product', 'x', 1),
+		);
+	}
+
+	public function testActivatedContextMethods(): void
+	{
+		Verba::activate($this->translator());
+
+		$this->assertSame('Öffnen', Verba::translateContext('menu', 'Open'));
+		$this->assertSame(
+			'3 Kontextprodukte',
+			Verba::translateContextPlural('inventory', 'Found one product', 'x', 3, [3]),
+		);
+		$this->assertSame(
+			'COSRAY Öffnen',
+			Verba::translateDomainContext('cosray', 'menu', 'Open'),
+		);
+		$this->assertSame(
+			'Ein Kontextprodukt',
+			Verba::translateDomainContextPlural(
+				'shop',
+				'inventory',
+				'Found one product',
+				'x',
+				1,
+			),
 		);
 	}
 

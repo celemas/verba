@@ -58,4 +58,30 @@ class FunctionsTest extends TestCase
 			1,
 		));
 	}
+
+	public function testContext(): void
+	{
+		$this->assertSame('Öffnen', __p('menu', 'Open'));
+	}
+
+	public function testContextPlural(): void
+	{
+		$this->assertSame(
+			'3 Kontextprodukte',
+			__np('inventory', 'Found one product', '%d products', 3, 3),
+		);
+	}
+
+	public function testDomainContext(): void
+	{
+		$this->assertSame('COSRAY Öffnen', __dp('cosray', 'menu', 'Open'));
+	}
+
+	public function testDomainContextPlural(): void
+	{
+		$this->assertSame(
+			'Ein Kontextprodukt',
+			__dnp('shop', 'inventory', 'Found one product', '%d products', 1),
+		);
+	}
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Celemas\Verba\Tool;
 
 /**
- * A translatable message found in source: its id, optional plural source, the
- * domain it targets (null for a bare `__`/`__n` call), and where it occurs.
+ * A translatable message found in source: its id, optional plural source,
+ * optional context, target domain, and locations.
  *
  * @api
  */
@@ -20,5 +20,6 @@ final class Message
 		public readonly string $id,
 		public readonly ?string $plural,
 		public readonly array $locations,
+		public readonly ?string $context = null,
 	) {}
 }

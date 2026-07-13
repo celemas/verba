@@ -22,6 +22,10 @@ class ExtractorTest extends TestCase
 			__d('shop', 'S');
 			__d('other', 'C');
 			__n('one', 'many', 2);
+			__p('menu', 'A');
+			__p('menu', 'A');
+			__p('state', 'A');
+			__dp('shop', 'menu', 'Shop context');
 			__($dyn);
 			PHP;
 
@@ -46,6 +50,10 @@ class ExtractorTest extends TestCase
 		$this->assertSame(['A', 'B', 'one'], $ids);
 		$this->assertCount(2, $result['messages']['A']->locations);
 		$this->assertSame('many', $result['messages']['one']->plural);
+		$this->assertSame(['menu', 'state'], array_keys($result['contexts']));
+		$this->assertCount(2, $result['contexts']['menu']['A']->locations);
+		$this->assertSame('menu', $result['contexts']['menu']['A']->context);
+		$this->assertSame('state', $result['contexts']['state']['A']->context);
 		$this->assertNotEmpty($result['warnings']);
 	}
 
@@ -57,6 +65,7 @@ class ExtractorTest extends TestCase
 		$result = new Extractor($domain)->extract();
 
 		$this->assertSame(['S'], array_keys($result['messages']));
+		$this->assertSame(['Shop context'], array_keys($result['contexts']['menu']));
 	}
 
 	public function testWarnsOnPluralConflicts(): void
@@ -68,6 +77,9 @@ class ExtractorTest extends TestCase
 			__n('same', 'many', 2);
 			__n('other', 'many', 2);
 			__n('other', 'others', 2);
+			__p('menu', 'label');
+			__np('menu', 'label', 'labels', 2);
+			__np('button', 'label', 'labels', 2);
 			PHP);
 		$domain = new Domain(
 			'app',
@@ -77,9 +89,12 @@ class ExtractorTest extends TestCase
 			default: true,
 		);
 
-		$warnings = implode("\n", new Extractor($domain)->extract()['warnings']);
+		$result = new Extractor($domain)->extract();
+		$warnings = implode("\n", $result['warnings']);
 
 		$this->assertStringContainsString('Mixed singular and plural calls', $warnings);
 		$this->assertStringContainsString('Conflicting plural forms', $warnings);
+		$this->assertStringContainsString("context 'menu'", $warnings);
+		$this->assertSame('button', $result['contexts']['button']['label']->context);
 	}
 }

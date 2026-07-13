@@ -19,10 +19,12 @@ final class Catalog
 	/**
 	 * @param array<string, string|list<string>|null> $messages
 	 * @param string $pluralKey A locale or rule id resolved through {@see Plurals}.
+	 * @param array<string, array<string, string|list<string>|null>> $contexts
 	 */
 	public function __construct(
 		private readonly array $messages,
 		private readonly string $pluralKey,
+		private readonly array $contexts = [],
 	) {
 		$this->plural = Plurals::rule($pluralKey);
 	}
@@ -47,6 +49,7 @@ final class Catalog
 		return new self(
 			self::readMessages($data['messages'] ?? null),
 			self::readPluralKey($data['plural'] ?? null, $locale),
+			self::readContexts($data['contexts'] ?? null),
 		);
 	}
 
@@ -64,6 +67,28 @@ final class Catalog
 	}
 
 	/**
+	 * @return array<string, array<string, string|list<string>|null>>
+	 */
+	private static function readContexts(mixed $contexts): array
+	{
+		if (!is_array($contexts)) {
+			return [];
+		}
+
+		$read = [];
+
+		foreach ($contexts as $context => $messages) {
+			if (!is_string($context) || !is_array($messages)) {
+				continue;
+			}
+
+			$read[$context] = self::readMessages($messages);
+		}
+
+		return $read;
+	}
+
+	/**
 	 * A catalog may borrow another language's rule via a `plural` key holding a
 	 * locale/rule id (e.g. `'plural' => 'ru'`); otherwise its own locale rules.
 	 */
@@ -78,9 +103,11 @@ final class Catalog
 	 *
 	 * @return string|list<string>|null
 	 */
-	public function get(string $id): string|array|null
+	public function get(string $id, ?string $context = null): string|array|null
 	{
-		return $this->messages[$id] ?? null;
+		$messages = $context === null ? $this->messages : $this->contexts[$context] ?? [];
+
+		return $messages[$id] ?? null;
 	}
 
 	/**
@@ -97,20 +124,51 @@ final class Catalog
 	 * dropped — a consumer of the payload falls back to the id, mirroring the
 	 * runtime.
 	 *
-	 * @return array{plural: string, messages: array<string, string|list<string>>}
+	 * @return array{
+	 *     plural: string,
+	 *     messages: array<string, string|list<string>>,
+	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 * }
 	 */
 	public function export(): array
 	{
-		$messages = [];
+		$export = [
+			'plural' => $this->pluralKey,
+			'messages' => self::translated($this->messages),
+		];
+		$contexts = [];
 
-		foreach ($this->messages as $id => $message) {
+		foreach ($this->contexts as $context => $messages) {
+			$messages = self::translated($messages);
+
+			if ($messages !== []) {
+				$contexts[$context] = $messages;
+			}
+		}
+
+		if ($contexts !== []) {
+			$export['contexts'] = $contexts;
+		}
+
+		return $export;
+	}
+
+	/**
+	 * @param array<string, string|list<string>|null> $messages
+	 * @return array<string, string|list<string>>
+	 */
+	private static function translated(array $messages): array
+	{
+		$translated = [];
+
+		foreach ($messages as $id => $message) {
 			if ($message === null || $message === []) {
 				continue;
 			}
 
-			$messages[$id] = $message;
+			$translated[$id] = $message;
 		}
 
-		return ['plural' => $this->pluralKey, 'messages' => $messages];
+		return $translated;
 	}
 }

@@ -30,6 +30,7 @@ class PhpScannerTest extends TestCase
 			__("Tab\there");
 			__('Back\\slash');
 			\__('Fully qualified');
+			\__p('qualified', 'Qualified context');
 			PHP;
 
 		$scanner = new PhpScanner([$this->write('a.php', $code)]);
@@ -41,6 +42,7 @@ class PhpScannerTest extends TestCase
 		$this->assertContains("Tab\there", $ids);
 		$this->assertContains('Back\\slash', $ids);
 		$this->assertContains('Fully qualified', $ids);
+		$this->assertContains('Qualified context', $ids);
 		$this->assertSame([], $scanner->warnings());
 	}
 
@@ -53,6 +55,10 @@ class PhpScannerTest extends TestCase
 			__n('one item', '%d items', $count);
 			__d('shop', 'Shop label');
 			__dn('shop', 'one order', '%d orders', $count);
+			__p('menu', 'Open');
+			__np('inventory', 'one result', '%d results', $count);
+			__dp('shop', 'button', 'Buy');
+			__dnp('shop', 'orders', 'one sale', '%d sales', $count);
 			__('Nested', ['k' => strlen('x')]);
 			PHP;
 
@@ -69,6 +75,15 @@ class PhpScannerTest extends TestCase
 		$this->assertSame('shop', $byId['Shop label']->domain);
 		$this->assertSame('shop', $byId['one order']->domain);
 		$this->assertSame('%d orders', $byId['one order']->plural);
+		$this->assertSame('menu', $byId['Open']->context);
+		$this->assertNull($byId['Open']->domain);
+		$this->assertSame('inventory', $byId['one result']->context);
+		$this->assertSame('%d results', $byId['one result']->plural);
+		$this->assertSame('shop', $byId['Buy']->domain);
+		$this->assertSame('button', $byId['Buy']->context);
+		$this->assertSame('shop', $byId['one sale']->domain);
+		$this->assertSame('orders', $byId['one sale']->context);
+		$this->assertSame('%d sales', $byId['one sale']->plural);
 		$this->assertSame('Nested', $byId['Nested']->id);
 		$this->assertSame([], $scanner->warnings());
 	}
@@ -95,6 +110,7 @@ class PhpScannerTest extends TestCase
 			$obj->__('method');
 			Dummy::__('static');
 			function __($x) { return $x; }
+			function __p($context, $x) { return $x; }
 			PHP;
 
 		$scanner = new PhpScanner([$this->write('a.php', $code)]);
@@ -111,6 +127,7 @@ class PhpScannerTest extends TestCase
 			__($dynamic);
 			__d($domain, 'x');
 			__n('one', $plural, 2);
+			__p($context, 'contextual');
 			__();
 			PHP;
 
@@ -121,6 +138,7 @@ class PhpScannerTest extends TestCase
 		$this->assertSame([], $messages);
 		$this->assertStringContainsString('Non-literal message id', $warnings);
 		$this->assertStringContainsString('Non-literal domain', $warnings);
+		$this->assertStringContainsString('Non-literal context', $warnings);
 		$this->assertStringContainsString('Non-literal plural', $warnings);
 	}
 

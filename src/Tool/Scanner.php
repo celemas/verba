@@ -17,7 +17,7 @@ interface Scanner
 	public function scan(): array;
 
 	/**
-	 * Messages skipped because an id, domain, or plural was not a literal.
+	 * Messages skipped because an id, domain, context, or plural was not a literal.
 	 *
 	 * @return list<string>
 	 */

@@ -46,14 +46,35 @@ export function __(id: string, args: Args = {}): string {
 	return current().translate(id, args);
 }
 
+/** Translate a contextual message through the active domain cascade. */
+export function __p(context: string, id: string, args: Args = {}): string {
+	return current().translateContext(context, id, args);
+}
+
 /** Translate a pluralized message, choosing the form for n. */
 export function __n(one: string, many: string, n: number, args: Args = {}): string {
 	return current().translatePlural(one, many, n, args);
 }
 
+/** Translate a contextual pluralized message, choosing the form for n. */
+export function __np(
+	context: string,
+	one: string,
+	many: string,
+	n: number,
+	args: Args = {},
+): string {
+	return current().translateContextPlural(context, one, many, n, args);
+}
+
 /** Translate a message from a specific domain. */
 export function __d(domain: string, id: string, args: Args = {}): string {
 	return current().translateDomain(domain, id, args);
+}
+
+/** Translate a contextual message from a specific domain. */
+export function __dp(domain: string, context: string, id: string, args: Args = {}): string {
+	return current().translateDomainContext(domain, context, id, args);
 }
 
 /** Translate a pluralized message from a specific domain. */
@@ -65,6 +86,18 @@ export function __dn(
 	args: Args = {},
 ): string {
 	return current().translateDomainPlural(domain, one, many, n, args);
+}
+
+/** Translate a contextual pluralized message from a specific domain. */
+export function __dnp(
+	domain: string,
+	context: string,
+	one: string,
+	many: string,
+	n: number,
+	args: Args = {},
+): string {
+	return current().translateDomainContextPlural(domain, context, one, many, n, args);
 }
 
 function current(): Translator {
