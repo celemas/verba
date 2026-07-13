@@ -73,6 +73,20 @@ class PhpScannerTest extends TestCase
 		$this->assertSame([], $scanner->warnings());
 	}
 
+	public function testExtractsNestedCalls(): void
+	{
+		$code = <<<'PHP'
+			<?php
+
+			__('Outer :inner', ['inner' => __('Inner')]);
+			PHP;
+
+		$scanner = new PhpScanner([$this->write('a.php', $code)]);
+
+		$this->assertSame(['Outer :inner', 'Inner'], $this->ids($scanner->scan()));
+		$this->assertSame([], $scanner->warnings());
+	}
+
 	public function testSkipsMethodStaticAndDeclaration(): void
 	{
 		$code = <<<'PHP'
@@ -129,6 +143,14 @@ class PhpScannerTest extends TestCase
 
 		$this->assertCount(3, $messages);
 		$this->assertContains('Shared', $this->ids($messages));
+	}
+
+	public function testWarnsOnUnterminatedCall(): void
+	{
+		$scanner = new PhpScanner([$this->write('a.php', "<?php\n__('A'")]);
+
+		$this->assertSame([], $scanner->scan());
+		$this->assertStringContainsString('Non-literal message id', implode("\n", $scanner->warnings()));
 	}
 
 	public function testIgnoresTrailingNameAtEndOfFile(): void

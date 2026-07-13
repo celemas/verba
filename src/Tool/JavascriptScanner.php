@@ -151,14 +151,14 @@ final class JavascriptScanner extends FileScanner
 			return $end;
 		}
 
-		[$args, $after] = $this->arguments($code, $open);
+		$args = $this->arguments($code, $open);
 		$this->emit($name, $args, $file . ':' . ($lineBase + substr_count($code, "\n", 0, $start) + 1));
 
-		return $after;
+		return $end;
 	}
 
 	/**
-	 * @return array{list<?string>, int}
+	 * @return list<?string>
 	 */
 	private function arguments(string $code, int $open): array
 	{
@@ -187,7 +187,7 @@ final class JavascriptScanner extends FileScanner
 			if ($char === ')' && $depth === 0) {
 				$args[] = $this->literal(substr($code, $start, $i - $start));
 
-				return [$args, $i + 1];
+				return $args;
 			}
 
 			if ($char === ')' || $char === ']' || $char === '}') {
@@ -208,7 +208,7 @@ final class JavascriptScanner extends FileScanner
 			$i++;
 		}
 
-		return [$args, $length];
+		return $args;
 	}
 
 	private function literal(string $raw): ?string

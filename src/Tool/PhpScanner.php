@@ -56,9 +56,8 @@ final class PhpScanner extends FileScanner
 				continue;
 			}
 
-			[$args, $end] = $this->arguments($tokens, $open);
+			$args = $this->arguments($tokens, $open);
 			$this->emit($name, $args, $file . ':' . $token->line);
-			$i = $end;
 		}
 	}
 
@@ -100,7 +99,7 @@ final class PhpScanner extends FileScanner
 	 * its literal string value, or null when it is not a single string literal.
 	 *
 	 * @param list<PhpToken> $tokens
-	 * @return array{list<?string>, int}
+	 * @return list<?string>
 	 */
 	private function arguments(array $tokens, int $open): array
 	{
@@ -108,7 +107,6 @@ final class PhpScanner extends FileScanner
 		$current = [];
 		$depth = 0;
 		$count = count($tokens);
-		$end = $count - 1;
 
 		for ($i = $open; $i < $count; $i++) {
 			$token = $tokens[$i];
@@ -136,9 +134,7 @@ final class PhpScanner extends FileScanner
 						$args[] = $this->literal($current);
 					}
 
-					$end = $i;
-
-					break;
+					return $args;
 				}
 
 				$current[] = $token;
@@ -156,7 +152,7 @@ final class PhpScanner extends FileScanner
 			$current[] = $token;
 		}
 
-		return [$args, $end];
+		return $args;
 	}
 
 	/**

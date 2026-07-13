@@ -88,6 +88,14 @@ class JavascriptScannerTest extends TestCase
 		);
 	}
 
+	public function testExtractsNestedCalls(): void
+	{
+		$scanner = $this->scanOne('a.js', "__('Outer :inner', { inner: __('Inner') });\n");
+
+		$this->assertSame(['Outer :inner', 'Inner'], $this->ids($scanner));
+		$this->assertSame([], $scanner->warnings());
+	}
+
 	public function testDecodesEscapes(): void
 	{
 		$code = <<<'JS'
