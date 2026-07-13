@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added `loadAndActivate()` for one-step JavaScript catalog loading and activation.
 - Added contextual translation across PHP and JavaScript with `__p`, `__np`, `__dp`, and `__dnp`, including nested catalog storage, extraction, synchronization, status reporting, locale fallback, and browser payload export.
 - Added a catalog format reference covering the schema, synchronization behavior, gettext differences, and design rationale.
 

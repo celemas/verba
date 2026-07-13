@@ -41,6 +41,16 @@ export function load(elementId = 'verba-catalog'): Translator | null {
 	}
 }
 
+export function loadAndActivate(elementId = 'verba-catalog'): Translator | null {
+	const loaded = load(elementId);
+
+	if (loaded) {
+		activate(loaded);
+	}
+
+	return loaded;
+}
+
 /** Translate a message through the active domain cascade. */
 export function __(id: string, args: Args = {}): string {
 	return current().translate(id, args);

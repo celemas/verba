@@ -13,6 +13,7 @@ import {
 	activate,
 	deactivate,
 	load,
+	loadAndActivate,
 	translator,
 } from '../src/verba.js';
 
@@ -36,9 +37,9 @@ const payload = {
 
 type WithDocument = { document?: unknown };
 
-function stubDocument(text: string | null): void {
+function stubDocument(text: string | null, elementId = 'verba-catalog'): void {
 	(globalThis as WithDocument).document = {
-		getElementById: (id: string) => (id === 'verba-catalog' ? { textContent: text } : null),
+		getElementById: (id: string) => (id === elementId ? { textContent: text } : null),
 	};
 }
 
@@ -109,5 +110,23 @@ describe('load', () => {
 
 		expect(t?.locale).toBe('de');
 		expect(t?.translate('Save')).toBe('Speichern');
+	});
+});
+
+describe('loadAndActivate', () => {
+	it('loads and activates the inlined payload', () => {
+		stubDocument(JSON.stringify(payload), 'catalog');
+		const loaded = loadAndActivate('catalog');
+
+		expect(translator()).toBe(loaded);
+		expect(__('Save')).toBe('Speichern');
+	});
+
+	it('leaves the active translator unchanged when loading fails', () => {
+		const active = new Translator(payload);
+		activate(active);
+
+		expect(loadAndActivate()).toBeNull();
+		expect(translator()).toBe(active);
 	});
 });

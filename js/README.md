@@ -28,10 +28,9 @@ per page:
 ```
 
 ```js
-import { __, __n, __p, activate, load } from '@celemas/verba';
+import { __, __n, __p, loadAndActivate } from '@celemas/verba';
 
-const translator = load(); // reads #verba-catalog, null during SSR
-if (translator) activate(translator);
+loadAndActivate(); // reads #verba-catalog, returns null during SSR
 
 __('Save'); // 'Speichern'
 __p('menu', 'Open'); // 'Öffnen'
@@ -44,7 +43,8 @@ in payload order, while `__d`/`__dn`/`__dp`/`__dnp` pin one domain. Context is
 an exact lookup axis, so a contextual miss never uses an uncontextual entry or a
 different context. Any miss falls back to the message id. With no translator
 active the functions return the interpolated id, so calls are safe during SSR
-and in tests.
+and in tests. Use `load()` and `activate()` separately when the translator needs
+inspection or other setup before activation.
 
 Only positional `sprintf` interpolation is PHP-only; strings shared with the
 frontend should use named `:placeholder` arguments.

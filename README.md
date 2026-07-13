@@ -152,10 +152,9 @@ The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the 
 ```
 
 ```js
-import { __, __n, __p, activate, load } from '@celemas/verba';
+import { __, __n, __p, loadAndActivate } from '@celemas/verba';
 
-const translator = load(); // reads #verba-catalog, null during SSR
-if (translator) activate(translator);
+loadAndActivate(); // reads #verba-catalog, returns null during SSR
 
 __('Save');
 __p('menu', 'Open');

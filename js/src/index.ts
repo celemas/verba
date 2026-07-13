@@ -19,5 +19,6 @@ export {
 	activate,
 	deactivate,
 	load,
+	loadAndActivate,
 	translator,
 } from './verba.js';
