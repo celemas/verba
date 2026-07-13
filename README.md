@@ -161,7 +161,7 @@ __p('menu', 'Open');
 __n(':count file', ':count files', 3); // ':count' is bound automatically
 ```
 
-With no translator active the functions return the interpolated message id, mirroring PHP.
+With no translator active the functions return the interpolated message id, mirroring PHP. During SSR, `loadAndActivate()` returns `null` because no DOM is available, so the global helpers use this fallback. Do not call the module-global `activate()` from a request handler because concurrent requests could share translators. The helper API does not currently support request-local translated SSR.
 
 ## Commands
 

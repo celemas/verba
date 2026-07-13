@@ -46,6 +46,12 @@ active the functions return the interpolated id, so calls are safe during SSR
 and in tests. Use `load()` and `activate()` separately when the translator needs
 inspection or other setup before activation.
 
+During SSR, `loadAndActivate()` returns `null` because no DOM is available, so
+the global helpers use the source-id fallback. Do not call the module-global
+`activate()` from a request handler because concurrent requests could share
+translators. The helper API does not currently support request-local translated
+SSR.
+
 Only positional `sprintf` interpolation is PHP-only; strings shared with the
 frontend should use named `:placeholder` arguments.
 
