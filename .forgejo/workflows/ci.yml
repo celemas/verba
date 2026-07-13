@@ -24,6 +24,28 @@ jobs:
         env:
           npm_config_yes: 'true'
 
+      - name: Setup pnpm
+        uses: https://code.forgejo.org/pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+          package_json_file: js/package.json
+
+      - name: Install JavaScript dependencies
+        working-directory: js
+        run: pnpm install --frozen-lockfile
+
+      - name: Run JavaScript checks
+        working-directory: js
+        run: pnpm check
+
+      - name: Run JavaScript tests
+        working-directory: js
+        run: pnpm test
+
+      - name: Build JavaScript package
+        working-directory: js
+        run: pnpm build
+
       - name: Run tests with coverage
         run: composer coverage:test
         env:
