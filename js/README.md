@@ -47,4 +47,4 @@ frontend should use named `:placeholder` arguments.
 
 ## License
 
-This project is licensed under the [MIT license](../LICENSE.md).
+This project is licensed under the [MIT license](LICENSE.md).

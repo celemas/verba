@@ -6,7 +6,8 @@
 	"homepage": "https://celemas.dev/verba",
 	"repository": {
 		"type": "git",
-		"url": "https://codeberg.org/celemas/verba"
+		"url": "git+https://codeberg.org/celemas/verba.git",
+		"directory": "js"
 	},
 	"keywords": [
 		"celemas",
@@ -16,6 +17,9 @@
 	],
 	"type": "module",
 	"packageManager": "pnpm@11.5.0",
+	"publishConfig": {
+		"access": "public"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -30,6 +34,8 @@
 		"build": "tsc -p tsconfig.build.json",
 		"check": "tsc && prettier --check .",
 		"format": "prettier --write .",
+		"prepack": "npm run build",
+		"prepublishOnly": "npm run check && npm run test",
 		"test": "vitest run"
 	},
 	"devDependencies": {
