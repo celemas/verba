@@ -249,7 +249,7 @@ final class JavascriptScanner extends FileScanner
 			$char = $raw[$i];
 
 			if ($char === '\\') {
-				$value .= $this->unescape($raw, $i);
+				$value .= JavascriptEscape::decode($raw, $i);
 
 				continue;
 			}
@@ -271,111 +271,6 @@ final class JavascriptScanner extends FileScanner
 		return null;
 
 		// @codeCoverageIgnoreEnd
-	}
-
-	private function unescape(string $raw, int &$i): string
-	{
-		$i++;
-		$char = $raw[$i] ?? '';
-
-		return match ($char) {
-			'b' => "\b",
-			'f' => "\f",
-			'n' => "\n",
-			'r' => "\r",
-			't' => "\t",
-			'v' => "\v",
-			'u' => $this->unicodeEscape($raw, $i),
-			'x' => $this->hexEscape($raw, $i),
-			default => $char,
-		};
-	}
-
-	private function unicodeEscape(string $raw, int &$i): string
-	{
-		if (($raw[$i + 1] ?? '') === '{') {
-			$end = strpos($raw, '}', $i + 2);
-
-			if ($end === false) {
-				return 'u';
-			}
-
-			$hex = substr($raw, $i + 2, $end - $i - 2);
-
-			if ($hex === '' || !ctype_xdigit($hex)) {
-				return 'u';
-			}
-
-			$i = $end;
-
-			return $this->htmlCodepoint($hex);
-		}
-
-		$hex = substr($raw, $i + 1, 4);
-
-		if (strlen($hex) !== 4 || !ctype_xdigit($hex)) {
-			return 'u';
-		}
-
-		$escape = '\\u' . $hex;
-		$i += 4;
-
-		if ($this->highSurrogate($hex)) {
-			$low = substr($raw, $i + 3, 4);
-
-			if (
-				($raw[$i + 1] ?? '') === '\\'
-				&& ($raw[$i + 2] ?? '') === 'u'
-				&& strlen($low) === 4
-				&& ctype_xdigit($low)
-				&& $this->lowSurrogate($low)
-			) {
-				$escape .= '\\u' . $low;
-				$i += 6;
-			}
-		}
-
-		/** @var string|null $decoded */
-		$decoded = json_decode('"' . $escape . '"');
-
-		return $decoded ?? '';
-	}
-
-	private function htmlCodepoint(string $hex): string
-	{
-		// Braced escapes already give one full codepoint. Fixed-width \uXXXX
-		// escapes use json_decode above so PHP handles surrogate pairs for us.
-		$entity = '&#x' . $hex . ';';
-		$decoded = html_entity_decode($entity, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-		return $decoded === $entity ? '' : $decoded;
-	}
-
-	private function highSurrogate(string $hex): bool
-	{
-		$code = hexdec($hex);
-
-		return $code >= 0xD800 && $code <= 0xDBFF;
-	}
-
-	private function lowSurrogate(string $hex): bool
-	{
-		$code = hexdec($hex);
-
-		return $code >= 0xDC00 && $code <= 0xDFFF;
-	}
-
-	private function hexEscape(string $raw, int &$i): string
-	{
-		$hex = substr($raw, $i + 1, 2);
-
-		if (strlen($hex) !== 2 || !ctype_xdigit($hex)) {
-			return 'x';
-		}
-
-		$i += 2;
-
-		return chr(hexdec($hex));
 	}
 
 	private function scanTemplate(string $code, int $i, string $file, int $lineBase): int
