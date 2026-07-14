@@ -41,7 +41,7 @@ export function load(elementId = 'verba-catalog'): Translator | null {
 	}
 }
 
-export function loadAndActivate(elementId = 'verba-catalog'): Translator | null {
+export function loadAndActivate(elementId?: string): Translator | null {
 	const loaded = load(elementId);
 
 	if (loaded) {
