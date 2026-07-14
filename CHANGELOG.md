@@ -1,8 +1,14 @@
 # Changelog
 
-## [Unreleased](https://codeberg.org/celemas/verba/compare/0.2.0...HEAD)
+## [Unreleased](https://codeberg.org/celemas/verba/compare/0.2.1...HEAD)
 
 No notable changes since the last release.
+
+## [0.2.1](https://codeberg.org/celemas/verba/src/tag/0.2.1) (2026-07-14)
+
+### Changed
+
+- Improved internal maintainability and code-quality checks without changing public behavior.
 
 ## [0.2.0](https://codeberg.org/celemas/verba/src/tag/0.2.0) (2026-07-14)
 
