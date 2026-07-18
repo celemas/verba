@@ -1,10 +1,10 @@
-# Celemas Verba
+# Celema Verba
 
 <!-- prettier-ignore-start -->
-[![ci](https://codeberg.org/celemas/verba/badges/workflows/ci.yml/badge.svg?style=flat&logo=codeberg&logoColor=white&label=ci)](https://codeberg.org/celemas/verba/actions)
-[![code coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Fcode%2Fbadge.json)](https://cov.celemas.dev/celemas/verba/code)
-[![type coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Ftypes%2Fbadge-cover.json)](https://cov.celemas.dev/celemas/verba/types)
-[![psalm level](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celemas.dev%2Fcelemas%2Fverba%2Ftypes%2Fbadge-level.json)](https://cov.celemas.dev/celemas/verba/types)
+[![ci](https://codeberg.org/celema/verba/badges/workflows/ci.yml/badge.svg?style=flat&logo=codeberg&logoColor=white&label=ci)](https://codeberg.org/celema/verba/actions)
+[![code coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Fcode%2Fbadge.json)](https://cov.celema.dev/celema/verba/code)
+[![type coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Ftypes%2Fbadge-cover.json)](https://cov.celema.dev/celema/verba/types)
+[![psalm level](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Ftypes%2Fbadge-level.json)](https://cov.celema.dev/celema/verba/types)
 [![Software License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- prettier-ignore-end -->
 
@@ -60,8 +60,8 @@ Verba does not escape anything — it cannot, since the same catalog feeds HTML,
 A `Translator` is bound to one locale and an ordered cascade of domains, each mapping to the directory that holds its catalog files. The first domain with a translation wins; a miss falls back to the message id.
 
 ```php
-use Celemas\Verba\Translator;
-use Celemas\Verba\Verba;
+use Celema\Verba\Translator;
+use Celema\Verba\Verba;
 
 $translator = new Translator('de', [
     'app' => __DIR__ . '/i18n',       // application strings, searched first
@@ -122,9 +122,9 @@ return [
 Scanners find the calls; a `Domain` ties them to a catalog directory and locale set.
 
 ```php
-use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\JavascriptScanner;
-use Celemas\Verba\Tool\PhpScanner;
+use Celema\Verba\Tool\Domain;
+use Celema\Verba\Tool\JavascriptScanner;
+use Celema\Verba\Tool\PhpScanner;
 
 $app = new Domain(
     name: 'app',
@@ -143,7 +143,7 @@ $app = new Domain(
 
 ## JavaScript runtime
 
-The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the same eight functions, contexts, plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
+The [`@celema/verba`](js/) npm package mirrors the runtime in the browser: the same eight functions, contexts, plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
 
 ```php
 <script id="verba-catalog" type="application/json">
@@ -152,7 +152,7 @@ The [`@celemas/verba`](js/) npm package mirrors the runtime in the browser: the 
 ```
 
 ```js
-import { __, __n, __p, loadAndActivate } from '@celemas/verba';
+import { __, __n, __p, loadAndActivate } from '@celema/verba';
 
 loadAndActivate(); // reads #verba-catalog, returns null during SSR
 
@@ -165,11 +165,11 @@ With no translator active the functions return the interpolated message id, mirr
 
 ## Commands
 
-Register the two commands with your [`celemas/cli`](https://codeberg.org/celemas/cli) runner, passing the domains to maintain:
+Register the two commands with your [`celema/console`](https://codeberg.org/celema/console) runner, passing the domains to maintain:
 
 ```php
-use Celemas\Verba\Command\StatusCommand;
-use Celemas\Verba\Command\SyncCommand;
+use Celema\Verba\Command\StatusCommand;
+use Celema\Verba\Command\SyncCommand;
 
 $commands->add(new SyncCommand([$app]));
 $commands->add(new StatusCommand([$app]));

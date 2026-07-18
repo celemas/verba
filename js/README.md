@@ -1,6 +1,6 @@
-# Celemas Verba — JavaScript runtime
+# Celema Verba — JavaScript runtime
 
-The browser half of [Celemas Verba](../README.md): a dependency-free ESM
+The browser half of [Celema Verba](../README.md): a dependency-free ESM
 runtime for catalogs exported by the PHP `Translator`. Verba's
 `JavascriptScanner` extracts the same eight calls from `.js`, `.ts`, `.jsx`,
 `.tsx`, `.svelte`, and `.vue` sources, so marked strings flow through
@@ -28,7 +28,7 @@ per page:
 ```
 
 ```js
-import { __, __n, __p, loadAndActivate } from '@celemas/verba';
+import { __, __n, __p, loadAndActivate } from '@celema/verba';
 
 loadAndActivate(); // reads #verba-catalog, returns null during SSR
 
