@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Celemas\Verba\Tests\Command;
 
+use Celemas\Cli\Args;
 use Celemas\Cli\Output;
 use Celemas\Verba\Command\SyncCommand;
 use Celemas\Verba\Tests\TestCase;
@@ -42,7 +43,8 @@ class SyncCommandTest extends TestCase
 	private function capture(SyncCommand $command): string
 	{
 		$out = $this->tmpDir() . '/out.txt';
-		$command->output(new Output($out))->run();
+		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
+		$command->output(new Output($out))->run($args);
 
 		return (string) file_get_contents($out);
 	}
@@ -88,7 +90,10 @@ class SyncCommandTest extends TestCase
 		$_SERVER['argv'] = ['run', 'i18n:sync'];
 		$this->write('src/x.php', "<?php\n__('A');\n");
 
-		$exit = new SyncCommand([$this->domain()])->output(new Output($this->tmpDir() . '/o.txt'))->run();
+		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
+		$exit = new SyncCommand([$this->domain()])
+			->output(new Output($this->tmpDir() . '/o.txt'))
+			->run($args);
 
 		$this->assertSame(0, $exit);
 	}

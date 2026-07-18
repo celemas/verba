@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Celemas\Verba\Command;
 
+use Celemas\Cli\Args;
 use Celemas\Cli\Command;
-use Celemas\Cli\Opts;
 use Celemas\Verba\Tool\Domain;
 use Celemas\Verba\Tool\Status;
 
@@ -31,11 +31,10 @@ final class StatusCommand extends Command
 	) {}
 
 	#[\Override]
-	public function run(): int
+	public function run(Args $args): int
 	{
-		$opts = new Opts();
-		$strict = $opts->has('--strict');
-		$where = $opts->has('--where');
+		$strict = $args->has('--strict');
+		$where = $args->has('--where');
 		$clean = true;
 
 		foreach ($this->domains as $domain) {

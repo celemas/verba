@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Celemas\Verba\Command;
 
+use Celemas\Cli\Args;
 use Celemas\Cli\Command;
-use Celemas\Cli\Opts;
 use Celemas\Verba\Tool\Domain;
 use Celemas\Verba\Tool\Sync;
 
@@ -29,9 +29,9 @@ final class SyncCommand extends Command
 	) {}
 
 	#[\Override]
-	public function run(): int
+	public function run(Args $args): int
 	{
-		$prune = new Opts()->has('--prune');
+		$prune = $args->has('--prune');
 
 		foreach ($this->domains as $domain) {
 			$report = new Sync($domain, $prune)->run();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Celemas\Verba\Tests\Command;
 
+use Celemas\Cli\Args;
 use Celemas\Cli\Output;
 use Celemas\Verba\Command\StatusCommand;
 use Celemas\Verba\Tests\TestCase;
@@ -47,7 +48,8 @@ class StatusCommandTest extends TestCase
 	private function capture(StatusCommand $command): array
 	{
 		$out = $this->tmpDir() . '/out.txt';
-		$exit = $command->output(new Output($out))->run();
+		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
+		$exit = $command->output(new Output($out))->run($args);
 
 		return [$exit, (string) file_get_contents($out)];
 	}
