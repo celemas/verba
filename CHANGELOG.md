@@ -1,16 +1,24 @@
 # Changelog
 
-## [Unreleased](https://codeberg.org/celemas/verba/compare/0.2.1...HEAD)
+## [Unreleased](https://codeberg.org/celema/verba/compare/0.2.1...HEAD)
 
-No notable changes since the last release.
+### Changed
 
-## [0.2.1](https://codeberg.org/celemas/verba/src/tag/0.2.1) (2026-07-14)
+- Renamed the Composer package to `celema/verba` and moved PHP classes from `Celemas\Verba` to `Celema\Verba`.
+- Renamed the npm package to `@celema/verba`.
+- Replaced the command dependency with `celema/console:^0.3` and moved command integrations from `Celemas\Cli` to `Celema\Console`.
+
+### Removed
+
+- Removed the previous Composer package name, npm package name, and PHP namespaces; consumers must update their dependencies and imports.
+
+## [0.2.1](https://codeberg.org/celema/verba/src/tag/0.2.1) (2026-07-14)
 
 ### Changed
 
 - Improved internal maintainability and code-quality checks without changing public behavior.
 
-## [0.2.0](https://codeberg.org/celemas/verba/src/tag/0.2.0) (2026-07-14)
+## [0.2.0](https://codeberg.org/celema/verba/src/tag/0.2.0) (2026-07-14)
 
 ### Added
 
@@ -18,7 +26,7 @@ No notable changes since the last release.
 - Added contextual translation across PHP and JavaScript with `__p`, `__np`, `__dp`, and `__dnp`, including nested catalog storage, extraction, synchronization, status reporting, locale fallback, and browser payload export.
 - Added a catalog format reference covering the schema, synchronization behavior, gettext differences, and design rationale.
 
-## [0.1.0](https://codeberg.org/celemas/verba/src/tag/0.1.0) (2026-07-13)
+## [0.1.0](https://codeberg.org/celema/verba/src/tag/0.1.0) (2026-07-13)
 
 Initial version.
 
