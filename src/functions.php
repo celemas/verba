@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Celemas\Verba\Verba;
+use Celema\Verba\Verba;
 
 /**
  * Translate a message through the active domain cascade.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tool;
+namespace Celema\Verba\Tool;
 
 /**
  * A translatable message found in source: its id, optional plural source,

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests;
+namespace Celema\Verba\Tests;
 
-use Celemas\Verba\Translator;
-use Celemas\Verba\Verba;
+use Celema\Verba\Translator;
+use Celema\Verba\Verba;
 
 class FunctionsTest extends TestCase
 {

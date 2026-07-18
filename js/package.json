@@ -1,16 +1,16 @@
 {
-	"name": "@celemas/verba",
-	"version": "0.2.1",
-	"description": "JavaScript runtime for Celemas Verba translation catalogs",
+	"name": "@celema/verba",
+	"version": "0.3.0",
+	"description": "JavaScript runtime for Celema Verba translation catalogs",
 	"license": "MIT",
-	"homepage": "https://celemas.dev/verba",
+	"homepage": "https://celema.dev/verba",
 	"repository": {
 		"type": "git",
-		"url": "git+https://codeberg.org/celemas/verba.git",
+		"url": "git+https://codeberg.org/celema/verba.git",
 		"directory": "js"
 	},
 	"keywords": [
-		"celemas",
+		"celema",
 		"internationalization",
 		"i18n",
 		"gettext"

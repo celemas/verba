@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests;
+namespace Celema\Verba\Tests;
 
-use Celemas\Verba\Plurals;
+use Celema\Verba\Plurals;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class PluralsTest extends TestCase

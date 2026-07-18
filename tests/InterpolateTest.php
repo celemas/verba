@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests;
+namespace Celema\Verba\Tests;
 
-use Celemas\Verba\Interpolate;
+use Celema\Verba\Interpolate;
 
 class InterpolateTest extends TestCase
 {

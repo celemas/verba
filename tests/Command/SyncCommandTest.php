@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Command;
+namespace Celema\Verba\Tests\Command;
 
-use Celemas\Cli\Args;
-use Celemas\Cli\Output;
-use Celemas\Verba\Command\SyncCommand;
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\CatalogFile;
-use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\PhpScanner;
+use Celema\Console\Args;
+use Celema\Console\Output;
+use Celema\Verba\Command\SyncCommand;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\CatalogFile;
+use Celema\Verba\Tool\Domain;
+use Celema\Verba\Tool\PhpScanner;
 
 class SyncCommandTest extends TestCase
 {
@@ -40,13 +40,16 @@ class SyncCommandTest extends TestCase
 		);
 	}
 
-	private function capture(SyncCommand $command): string
+	/** @return array{string, string} */
+	private function capture(SyncCommand $command): array
 	{
 		$out = $this->tmpDir() . '/out.txt';
+		$err = $this->tmpDir() . '/err.txt';
+		file_put_contents($err, '');
 		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$command->output(new Output($out))->run($args);
+		$command->output(new Output($out, $err))->run($args);
 
-		return (string) file_get_contents($out);
+		return [(string) file_get_contents($out), (string) file_get_contents($err)];
 	}
 
 	public function testReportsPerLocale(): void
@@ -54,7 +57,7 @@ class SyncCommandTest extends TestCase
 		$_SERVER['argv'] = ['run', 'i18n:sync'];
 		$this->write('src/x.php', "<?php\n__('A');\n");
 
-		$output = $this->capture(new SyncCommand([$this->domain()]));
+		[$output] = $this->capture(new SyncCommand([$this->domain()]));
 
 		$this->assertStringContainsString('i18n: app', $output);
 		$this->assertStringContainsString('1 added', $output);
@@ -79,10 +82,9 @@ class SyncCommandTest extends TestCase
 		$_SERVER['argv'] = ['run', 'i18n:sync'];
 		$this->write('src/x.php', "<?php\n__(\$dynamic);\n");
 
-		$this->assertStringContainsString(
-			'Non-literal message id',
-			$this->capture(new SyncCommand([$this->domain()])),
-		);
+		[, $error] = $this->capture(new SyncCommand([$this->domain()]));
+
+		$this->assertStringContainsString('Non-literal message id', $error);
 	}
 
 	public function testReturnsZero(): void

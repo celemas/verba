@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tool;
+namespace Celema\Verba\Tool;
 
 /**
  * The outcome of a sync: per-locale counts and any scanner warnings.

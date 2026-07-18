@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tool;
+namespace Celema\Verba\Tool;
 
 /**
  * Reads and renders a `<domain>.<locale>.php` catalog for the sync tooling,

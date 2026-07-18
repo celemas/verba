@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tool;
+namespace Celema\Verba\Tool;
 
 /**
  * Reports translation gaps for a domain without touching any files: per locale,

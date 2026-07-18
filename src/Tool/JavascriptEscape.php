@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tool;
+namespace Celema\Verba\Tool;
 
 /**
  * Decodes escape sequences from JavaScript string literals.

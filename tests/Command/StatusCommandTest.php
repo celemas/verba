@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Command;
+namespace Celema\Verba\Tests\Command;
 
-use Celemas\Cli\Args;
-use Celemas\Cli\Output;
-use Celemas\Verba\Command\StatusCommand;
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\PhpScanner;
+use Celema\Console\Args;
+use Celema\Console\Output;
+use Celema\Verba\Command\StatusCommand;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\Domain;
+use Celema\Verba\Tool\PhpScanner;
 
 class StatusCommandTest extends TestCase
 {
@@ -43,15 +43,17 @@ class StatusCommandTest extends TestCase
 	}
 
 	/**
-	 * @return array{int, string}
+	 * @return array{int, string, string}
 	 */
 	private function capture(StatusCommand $command): array
 	{
 		$out = $this->tmpDir() . '/out.txt';
+		$err = $this->tmpDir() . '/err.txt';
+		file_put_contents($err, '');
 		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$exit = $command->output(new Output($out))->run($args);
+		$exit = $command->output(new Output($out, $err))->run($args);
 
-		return [$exit, (string) file_get_contents($out)];
+		return [$exit, (string) file_get_contents($out), (string) file_get_contents($err)];
 	}
 
 	public function testReportsStatusWithoutStrict(): void
@@ -115,8 +117,8 @@ class StatusCommandTest extends TestCase
 		$_SERVER['argv'] = ['run', 'i18n:status'];
 		$this->write('src/x.php', "<?php\n__(\$dyn);\n");
 
-		[, $output] = $this->capture(new StatusCommand([$this->domain(['de'])]));
+		[, , $error] = $this->capture(new StatusCommand([$this->domain(['de'])]));
 
-		$this->assertStringContainsString('Non-literal message id', $output);
+		$this->assertStringContainsString('Non-literal message id', $error);
 	}
 }

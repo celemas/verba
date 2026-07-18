@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Tool;
+namespace Celema\Verba\Tests\Tool;
 
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\Message;
-use Celemas\Verba\Tool\PhpScanner;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\Message;
+use Celema\Verba\Tool\PhpScanner;
 
 class PhpScannerTest extends TestCase
 {

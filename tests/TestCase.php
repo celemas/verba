@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests;
+namespace Celema\Verba\Tests;
 
-use Celemas\Verba\Verba;
+use Celema\Verba\Verba;
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use RecursiveDirectoryIterator;

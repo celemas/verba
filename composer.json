@@ -1,23 +1,23 @@
 {
-	"name": "celemas/verba",
+	"name": "celema/verba",
 	"description": "Gettext-style internationalization for PHP without the gettext extension",
 	"type": "library",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Ernst",
-			"email": "ernst@celemas.dev"
+			"email": "ernst@celema.dev"
 		}
 	],
-	"homepage": "https://celemas.dev/verba",
+	"homepage": "https://celema.dev/verba",
 	"keywords": [
-		"celemas",
+		"celema",
 		"internationalization",
 		"i18n"
 	],
 	"autoload": {
 		"psr-4": {
-			"Celemas\\Verba\\": "src/"
+			"Celema\\Verba\\": "src/"
 		},
 		"files": [
 			"src/functions.php"
@@ -25,15 +25,15 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Celemas\\Verba\\Tests\\": "tests"
+			"Celema\\Verba\\Tests\\": "tests"
 		}
 	},
 	"require": {
 		"php": "^8.5",
-		"celemas/cli": "^0.2.0"
+		"celema/console": "^0.3"
 	},
 	"require-dev": {
-		"celemas/dev": "^4.2"
+		"celema/dev": "^5.0"
 	},
 	"scripts": {
 		"test": [
@@ -41,7 +41,7 @@
 		],
 		"types": "./vendor/bin/psalm --no-cache",
 		"docs:format": "npx prettier@3.6.2 --write README.md CHANGELOG.md LICENSE.md .github/README.md \"docs/**/*.md\"",
-		"docs:lint": "npx markdownlint-cli2@0.22.1 --config ./vendor/celemas/dev/config/markdownlint.jsonc README.md CHANGELOG.md LICENSE.md .github/README.md \"docs/**/*.md\"",
+		"docs:lint": "npx markdownlint-cli2@0.22.1 --config ./vendor/celema/dev/config/markdownlint.jsonc README.md CHANGELOG.md LICENSE.md .github/README.md \"docs/**/*.md\"",
 		"lint": [
 			"./vendor/bin/mago fmt --check",
 			"./vendor/bin/mago lint"

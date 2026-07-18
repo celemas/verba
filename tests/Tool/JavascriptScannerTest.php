@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Tool;
+namespace Celema\Verba\Tests\Tool;
 
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\JavascriptScanner;
-use Celemas\Verba\Tool\Message;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\JavascriptScanner;
+use Celema\Verba\Tool\Message;
 
 class JavascriptScannerTest extends TestCase
 {

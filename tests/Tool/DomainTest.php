@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Tool;
+namespace Celema\Verba\Tests\Tool;
 
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\Domain;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\Domain;
 
 class DomainTest extends TestCase
 {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Command;
+namespace Celema\Verba\Command;
 
-use Celemas\Cli\Args;
-use Celemas\Cli\Command;
-use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\Status;
+use Celema\Console\Args;
+use Celema\Console\Command;
+use Celema\Verba\Tool\Domain;
+use Celema\Verba\Tool\Status;
 
 /**
  * `i18n:status` — report translation gaps per domain and locale. `--strict`

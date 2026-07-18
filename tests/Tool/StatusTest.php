@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba\Tests\Tool;
+namespace Celema\Verba\Tests\Tool;
 
-use Celemas\Verba\Tests\TestCase;
-use Celemas\Verba\Tool\Domain;
-use Celemas\Verba\Tool\PhpScanner;
-use Celemas\Verba\Tool\Status;
+use Celema\Verba\Tests\TestCase;
+use Celema\Verba\Tool\Domain;
+use Celema\Verba\Tool\PhpScanner;
+use Celema\Verba\Tool\Status;
 
 class StatusTest extends TestCase
 {

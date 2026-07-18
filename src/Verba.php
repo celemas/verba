@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Celemas\Verba;
+namespace Celema\Verba;
 
 /**
  * Process-wide holder and facade for the active translator.
