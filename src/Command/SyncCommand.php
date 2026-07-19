@@ -6,6 +6,8 @@ namespace Celema\Verba\Command;
 
 use Celema\Console\Args;
 use Celema\Console\Command;
+use Celema\Console\Io;
+use Celema\Console\Opt;
 use Celema\Verba\Tool\Domain;
 use Celema\Verba\Tool\Sync;
 
@@ -14,13 +16,10 @@ use Celema\Verba\Tool\Sync;
  *
  * @api
  */
-final class SyncCommand extends Command
+#[Command('i18n:sync', 'Extract messages and reconcile catalog files')]
+#[Opt('--prune', 'Drop obsolete messages from the catalogs')]
+final class SyncCommand
 {
-	protected string $group = 'i18n';
-	protected string $prefix = 'i18n';
-	protected string $name = 'sync';
-	protected string $description = 'Extract messages and reconcile catalog files';
-
 	/**
 	 * @param list<Domain> $domains
 	 */
@@ -28,17 +27,16 @@ final class SyncCommand extends Command
 		private readonly array $domains,
 	) {}
 
-	#[\Override]
-	public function run(Args $args): int
+	public function __invoke(Args $args, Io $io): int
 	{
 		$prune = $args->has('--prune');
 
 		foreach ($this->domains as $domain) {
 			$report = new Sync($domain, $prune)->run();
-			$this->echoln("i18n: {$report->domain}");
+			$io->echoln("i18n: {$report->domain}");
 
 			foreach ($report->locales as $locale => $stat) {
-				$this->echoln(sprintf(
+				$io->echoln(sprintf(
 					'  %s  %d messages, %d added, %d obsolete%s',
 					$locale,
 					$stat['total'],
@@ -49,7 +47,7 @@ final class SyncCommand extends Command
 			}
 
 			foreach ($report->warnings as $warning) {
-				$this->warn('  ' . $warning);
+				$io->warn('  ' . $warning);
 			}
 		}
 

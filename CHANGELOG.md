@@ -2,7 +2,9 @@
 
 ## [Unreleased](https://codeberg.org/celema/verba/compare/0.3.0...HEAD)
 
-No notable changes since the last release.
+### Breaking
+
+- Adopted the attribute-based command API of `celema/console` 0.4. `SyncCommand` and `StatusCommand` are now plain `#[Command]` classes invoked via `__invoke(Args $args, Io $io)` instead of extending the removed console base class; their `--prune`, `--strict`, and `--where` options are documented via `#[Opt]` attributes in `help i18n:sync` / `help i18n:status`.
 
 ## [0.3.0](https://codeberg.org/celema/verba/src/tag/0.3.0) (2026-07-18)
 

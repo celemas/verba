@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Celema\Verba\Tests\Command;
 
 use Celema\Console\Args;
-use Celema\Console\Output;
+use Celema\Console\Io;
 use Celema\Verba\Command\StatusCommand;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\Domain;
@@ -51,7 +51,7 @@ class StatusCommandTest extends TestCase
 		$err = $this->tmpDir() . '/err.txt';
 		file_put_contents($err, '');
 		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$exit = $command->output(new Output($out, $err))->run($args);
+		$exit = $command($args, new Io($out, $err));
 
 		return [$exit, (string) file_get_contents($out), (string) file_get_contents($err)];
 	}

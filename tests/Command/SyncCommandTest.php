@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Celema\Verba\Tests\Command;
 
 use Celema\Console\Args;
-use Celema\Console\Output;
+use Celema\Console\Io;
 use Celema\Verba\Command\SyncCommand;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\CatalogFile;
@@ -47,7 +47,7 @@ class SyncCommandTest extends TestCase
 		$err = $this->tmpDir() . '/err.txt';
 		file_put_contents($err, '');
 		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$command->output(new Output($out, $err))->run($args);
+		$command($args, new Io($out, $err));
 
 		return [(string) file_get_contents($out), (string) file_get_contents($err)];
 	}
@@ -93,9 +93,7 @@ class SyncCommandTest extends TestCase
 		$this->write('src/x.php', "<?php\n__('A');\n");
 
 		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$exit = new SyncCommand([$this->domain()])
-			->output(new Output($this->tmpDir() . '/o.txt'))
-			->run($args);
+		$exit = (new SyncCommand([$this->domain()]))($args, new Io($this->tmpDir() . '/o.txt'));
 
 		$this->assertSame(0, $exit);
 	}

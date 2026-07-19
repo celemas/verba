@@ -126,7 +126,7 @@ use Celema\Verba\Tool\Domain;
 use Celema\Verba\Tool\JavascriptScanner;
 use Celema\Verba\Tool\PhpScanner;
 
-$app = new Domain(
+$domain = new Domain(
     name: 'app',
     dir: __DIR__ . '/i18n',
     locales: ['en', 'de'],
@@ -171,8 +171,8 @@ Register the two commands with your [`celema/console`](https://codeberg.org/cele
 use Celema\Verba\Command\StatusCommand;
 use Celema\Verba\Command\SyncCommand;
 
-$commands->add(new SyncCommand([$app]));
-$commands->add(new StatusCommand([$app]));
+$commands->add(new SyncCommand([$domain]));
+$commands->add(new StatusCommand([$domain]));
 ```
 
 - `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections.
