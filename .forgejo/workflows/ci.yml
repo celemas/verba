@@ -21,8 +21,6 @@ jobs:
 
       - name: Run Markdown lint checks
         run: composer docs:lint
-        env:
-          npm_config_yes: 'true'
 
       - name: Setup pnpm
         uses: https://code.forgejo.org/pnpm/action-setup@v4
