@@ -6,7 +6,7 @@
 	"homepage": "https://celema.dev/verba",
 	"repository": {
 		"type": "git",
-		"url": "git+https://codeberg.org/celema/verba.git",
+		"url": "git+https://codefloe.com/celema/verba.git",
 		"directory": "js"
 	},
 	"keywords": [

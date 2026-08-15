@@ -1,7 +1,7 @@
 # Celema Verba
 
 <!-- prettier-ignore-start -->
-[![ci](https://codeberg.org/celema/verba/badges/workflows/ci.yml/badge.svg?style=flat&logo=codeberg&logoColor=white&label=ci)](https://codeberg.org/celema/verba/actions)
+[![ci](https://codefloe.com/celema/verba/badges/workflows/ci.yml/badge.svg?style=flat&logo=forgejo&logoColor=white&label=ci)](https://codefloe.com/celema/verba/actions)
 [![code coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Fcode%2Fbadge.json)](https://cov.celema.dev/celema/verba/code)
 [![type coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Ftypes%2Fbadge-cover.json)](https://cov.celema.dev/celema/verba/types)
 [![psalm level](https://img.shields.io/endpoint?url=https%3A%2F%2Fcov.celema.dev%2Fcelema%2Fverba%2Ftypes%2Fbadge-level.json)](https://cov.celema.dev/celema/verba/types)
@@ -165,7 +165,7 @@ With no translator active the functions return the interpolated message id, mirr
 
 ## Commands
 
-Register the two commands with your [`celema/console`](https://codeberg.org/celema/console) runner, passing the domains to maintain:
+Register the two commands with your [`celema/console`](https://codefloe.com/celema/console) runner, passing the domains to maintain:
 
 ```php
 use Celema\Verba\Command\StatusCommand;

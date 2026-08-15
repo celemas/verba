@@ -1,16 +1,16 @@
 # Changelog
 
-## [Unreleased](https://codeberg.org/celema/verba/compare/0.4.0...HEAD)
+## [Unreleased](https://codefloe.com/celema/verba/compare/0.4.0...HEAD)
 
 No notable changes since the last release.
 
-## [0.4.0](https://codeberg.org/celema/verba/src/tag/0.4.0) (2026-07-20)
+## [0.4.0](https://codefloe.com/celema/verba/src/tag/0.4.0) (2026-07-20)
 
 ### Breaking
 
 - Adopted the attribute-based command API of `celema/console` 0.4. `SyncCommand` and `StatusCommand` are now plain `#[Command]` classes invoked via `__invoke(Args $args, Io $io)` instead of extending the removed console base class; their `--prune`, `--strict`, and `--where` options are documented via `#[Opt]` attributes in `help i18n:sync` / `help i18n:status`.
 
-## [0.3.0](https://codeberg.org/celema/verba/src/tag/0.3.0) (2026-07-18)
+## [0.3.0](https://codefloe.com/celema/verba/src/tag/0.3.0) (2026-07-18)
 
 ### Changed
 
@@ -22,13 +22,13 @@ No notable changes since the last release.
 
 - Removed the previous Composer package name, npm package name, and PHP namespaces; consumers must update their dependencies and imports.
 
-## [0.2.1](https://codeberg.org/celema/verba/src/tag/0.2.1) (2026-07-14)
+## [0.2.1](https://codefloe.com/celema/verba/src/tag/0.2.1) (2026-07-14)
 
 ### Changed
 
 - Improved internal maintainability and code-quality checks without changing public behavior.
 
-## [0.2.0](https://codeberg.org/celema/verba/src/tag/0.2.0) (2026-07-14)
+## [0.2.0](https://codefloe.com/celema/verba/src/tag/0.2.0) (2026-07-14)
 
 ### Added
 
@@ -36,7 +36,7 @@ No notable changes since the last release.
 - Added contextual translation across PHP and JavaScript with `__p`, `__np`, `__dp`, and `__dnp`, including nested catalog storage, extraction, synchronization, status reporting, locale fallback, and browser payload export.
 - Added a catalog format reference covering the schema, synchronization behavior, gettext differences, and design rationale.
 
-## [0.1.0](https://codeberg.org/celema/verba/src/tag/0.1.0) (2026-07-13)
+## [0.1.0](https://codefloe.com/celema/verba/src/tag/0.1.0) (2026-07-13)
 
 Initial version.
 
