@@ -64,9 +64,9 @@ class StatusTest extends TestCase
 		$this->write(
 			'i18n/app.de.php',
 			"<?php\nreturn ['messages' => [], "
-			. "'contexts' => ['menu' => ['Open' => 'Öffnen', 'Save' => null, 'Extra' => 'X'], "
-			. "'wrong' => ['Open' => 'Falsch']], "
-			. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
+				. "'contexts' => ['menu' => ['Open' => 'Öffnen', 'Save' => null, 'Extra' => 'X'], "
+				. "'wrong' => ['Open' => 'Falsch']], "
+				. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
 		);
 
 		$de = new Status($this->domain(['de']))->run()->locales['de'];

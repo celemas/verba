@@ -47,8 +47,8 @@ class SyncTest extends TestCase
 		$this->write(
 			'i18n/app.de.php',
 			"<?php\nreturn ["
-			. "'messages' => ['A' => 'Ae', 'Gone' => 'Weg'], "
-			. "'obsolete' => ['Back' => 'Zurück', 'Ancient' => 'Alt']];\n",
+				. "'messages' => ['A' => 'Ae', 'Gone' => 'Weg'], "
+				. "'obsolete' => ['Back' => 'Zurück', 'Ancient' => 'Alt']];\n",
 		);
 
 		$report = new Sync($this->domain())->run();
@@ -85,7 +85,7 @@ class SyncTest extends TestCase
 		$this->write(
 			'i18n/app.de.php',
 			"<?php\nreturn ['messages' => [], "
-			. "'obsolete_contexts' => ['menu' => ['Back' => 'Zurück']]];\n",
+				. "'obsolete_contexts' => ['menu' => ['Back' => 'Zurück']]];\n",
 		);
 
 		new Sync($this->domain())->run();
@@ -101,7 +101,7 @@ class SyncTest extends TestCase
 		$this->write(
 			'i18n/app.de.php',
 			"<?php\nreturn ['messages' => ['A' => 'Ae'], "
-			. "'contexts' => ['menu' => ['Gone' => 'Weg']]];\n",
+				. "'contexts' => ['menu' => ['Gone' => 'Weg']]];\n",
 		);
 
 		$report = new Sync($this->domain())->run();
@@ -129,8 +129,8 @@ class SyncTest extends TestCase
 		$this->write(
 			'i18n/app.de.php',
 			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg'], "
-			. "'contexts' => ['menu' => ['Old' => 'Alt']], "
-			. "'obsolete_contexts' => ['state' => ['Old' => 'Alt']]];\n",
+				. "'contexts' => ['menu' => ['Old' => 'Alt']], "
+				. "'obsolete_contexts' => ['state' => ['Old' => 'Alt']]];\n",
 		);
 
 		new Sync($this->domain(), prune: true)->run();

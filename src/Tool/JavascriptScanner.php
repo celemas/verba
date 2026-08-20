@@ -529,7 +529,12 @@ final class JavascriptScanner extends FileScanner
 
 		while (
 			$i < $length
-			&& ($code[$i] === ' ' || $code[$i] === "\t" || $code[$i] === "\n" || $code[$i] === "\r")
+				&& (
+					$code[$i] === ' '
+					|| $code[$i] === "\t"
+					|| $code[$i] === "\n"
+					|| $code[$i] === "\r"
+				)
 		) {
 			$i++;
 		}

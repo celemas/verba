@@ -32,9 +32,9 @@ class CatalogFileTest extends TestCase
 		$file = $this->write(
 			'app.de.php',
 			"<?php\nreturn ["
-			. "'plural' => 'ru', 'messages' => ['A' => 'Ae'], 'obsolete' => ['B' => 'Be'], "
-			. "'contexts' => ['menu' => ['Open' => 'Öffnen']], "
-			. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
+				. "'plural' => 'ru', 'messages' => ['A' => 'Ae'], 'obsolete' => ['B' => 'Be'], "
+				. "'contexts' => ['menu' => ['Open' => 'Öffnen']], "
+				. "'obsolete_contexts' => ['menu' => ['Old' => 'Alt']]];\n",
 		);
 		$catalog = CatalogFile::load($file);
 
@@ -102,7 +102,7 @@ class CatalogFileTest extends TestCase
 		$file = $this->write(
 			'app.de.php',
 			"<?php\nreturn ['contexts' => ['good' => ['A' => 'B'], 'bad' => 'x', 3 => []], "
-			. "'obsolete_contexts' => 'bad'];\n",
+				. "'obsolete_contexts' => 'bad'];\n",
 		);
 		$catalog = CatalogFile::load($file);
 

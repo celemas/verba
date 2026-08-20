@@ -66,10 +66,10 @@ final class JavascriptEscape
 
 			if (
 				($raw[$offset + 1] ?? '') === '\\'
-				&& ($raw[$offset + 2] ?? '') === 'u'
-				&& strlen($low) === 4
-				&& ctype_xdigit($low)
-				&& self::lowSurrogate($low)
+					&& ($raw[$offset + 2] ?? '') === 'u'
+					&& strlen($low) === 4
+					&& ctype_xdigit($low)
+					&& self::lowSurrogate($low)
 			) {
 				$escape .= '\\u' . $low;
 				$offset += 6;
