@@ -60,6 +60,7 @@ class SyncTest extends TestCase
 		$this->assertSame(['Ancient' => 'Alt', 'Gone' => 'Weg'], $catalog->obsolete);
 		$this->assertSame(1, $report->locales['de']['added']);
 		$this->assertSame(2, $report->locales['de']['obsolete']);
+		$this->assertSame(['Gone'], $report->locales['de']['vanished']);
 	}
 
 	public function testAddsAndPreservesContextualMessages(): void
@@ -110,6 +111,7 @@ class SyncTest extends TestCase
 		$this->assertSame([], $catalog->contexts);
 		$this->assertSame(['menu' => ['Gone' => 'Weg']], $catalog->obsoleteContexts);
 		$this->assertSame(1, $report->locales['de']['obsolete']);
+		$this->assertSame(['[menu] Gone'], $report->locales['de']['vanished']);
 	}
 
 	public function testSecondRunIsIdempotent(): void
@@ -133,13 +135,15 @@ class SyncTest extends TestCase
 				. "'obsolete_contexts' => ['state' => ['Old' => 'Alt']]];\n",
 		);
 
-		new Sync($this->domain(), prune: true)->run();
+		$report = new Sync($this->domain(), prune: true)->run();
 		$catalog = $this->catalog();
 
 		$this->assertSame(['A' => 'Ae'], $catalog->messages);
 		$this->assertSame([], $catalog->obsolete);
 		$this->assertSame([], $catalog->contexts);
 		$this->assertSame([], $catalog->obsoleteContexts);
+		// Named although dropped: the report is the only trace they leave.
+		$this->assertSame(['Gone', '[menu] Old'], $report->locales['de']['vanished']);
 	}
 
 	public function testThrowsWhenCatalogDirectoryCannotBeCreated(): void

@@ -42,13 +42,15 @@ final class Status
 	 *     obsolete: int,
 	 *     total: int,
 	 *     locations: list<string>,
+	 *     parked: list<string>,
+	 *     vanished: list<string>,
 	 * }
 	 */
 	private function inspect(string $locale, array $fresh, array $freshContexts): array
 	{
 		$catalog = CatalogFile::load($this->domain->file($locale));
 		$summary = self::inspectSection($fresh, $catalog->messages);
-		$obsolete = self::obsolete($catalog->messages, $catalog->obsolete, $fresh);
+		$stale = self::stale($catalog->messages, $catalog->obsolete, $fresh);
 
 		foreach ($freshContexts as $context => $contextFresh) {
 			$contextSummary = self::inspectSection(
@@ -64,20 +66,25 @@ final class Status
 		]);
 
 		foreach ($contextNames as $context) {
-			$obsolete += self::obsolete(
+			$contextStale = self::stale(
 				$catalog->contexts[$context] ?? [],
 				$catalog->obsoleteContexts[$context] ?? [],
 				$freshContexts[$context] ?? [],
+				$context,
 			);
+			$stale['parked'] = [...$stale['parked'], ...$contextStale['parked']];
+			$stale['vanished'] = [...$stale['vanished'], ...$contextStale['vanished']];
 		}
 
 		return [
 			'missing' => $summary['missing'],
 			'untranslated' => $summary['untranslated'],
 			'translated' => $summary['translated'],
-			'obsolete' => $obsolete,
+			'obsolete' => count($stale['parked']) + count($stale['vanished']),
 			'total' => $summary['total'],
 			'locations' => $summary['locations'],
+			'parked' => $stale['parked'],
+			'vanished' => $stale['vanished'],
 		];
 	}
 
@@ -137,22 +144,34 @@ final class Status
 	}
 
 	/**
+	 * The catalog entries the source no longer holds: those a sync already
+	 * parked in the obsolete section, and those still in the live section
+	 * because no sync ran since they vanished. A contextual id reads
+	 * `[context] id`.
+	 *
 	 * @param array<string, string|list<string>|null> $messages
 	 * @param array<string, string|list<string>|null> $parked
 	 * @param array<string, Message> $fresh
+	 * @return array{parked: list<string>, vanished: list<string>}
 	 */
-	private static function obsolete(array $messages, array $parked, array $fresh): int
-	{
-		$count = count($parked);
+	private static function stale(
+		array $messages,
+		array $parked,
+		array $fresh,
+		?string $context = null,
+	): array {
+		// A numeric id arrives as an integer key.
+		$label = static fn(int|string $id): string => $context === null ? (string) $id : "[{$context}] {$id}";
+		$vanished = [];
 
 		foreach (array_keys($messages) as $id) {
 			if (array_key_exists($id, $fresh) || array_key_exists($id, $parked)) {
 				continue;
 			}
 
-			$count++;
+			$vanished[] = $label($id);
 		}
 
-		return $count;
+		return ['parked' => array_map($label, array_keys($parked)), 'vanished' => $vanished];
 	}
 }

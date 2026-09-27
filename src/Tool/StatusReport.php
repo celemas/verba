@@ -19,6 +19,8 @@ final class StatusReport
 	 *     obsolete: int,
 	 *     total: int,
 	 *     locations: list<string>,
+	 *     parked: list<string>,
+	 *     vanished: list<string>,
 	 * }> $locales
 	 * @param list<string> $warnings
 	 */

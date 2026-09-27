@@ -44,6 +44,10 @@ final class SyncCommand
 					$stat['obsolete'],
 					$stat['changed'] ? '' : ' (unchanged)',
 				));
+
+				foreach ($stat['vanished'] as $id) {
+					$io->echoln('    ' . ($prune ? 'dropped' : 'parked') . ': ' . $id);
+				}
 			}
 
 			foreach ($report->warnings as $warning) {

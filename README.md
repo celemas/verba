@@ -177,8 +177,8 @@ $commands->add(new SyncCommand([$domain]));
 $commands->add(new StatusCommand([$domain]));
 ```
 
-- `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections.
-- `i18n:status` — report per locale how many ids are missing, untranslated, translated, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps.
+- `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there and named in the output. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections, naming what it drops.
+- `i18n:status` — report per locale how many ids are missing, untranslated, translated, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps and the obsolete ids, telling those a sync already parked from those still in the live section.
 
 ## License
 

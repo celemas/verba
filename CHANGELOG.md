@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://codefloe.com/celema/verba/compare/0.4.0...HEAD)
 
+### Added
+
+- `i18n:sync` names the ids it parks or, with `--prune`, drops, and `i18n:status --where` lists the obsolete ids, telling those a sync already parked from those still in the live section. The reports carry them as `vanished` and `parked` lists.
+
 ### Changed
 
 - The JavaScript runtime is plain ES modules with JSDoc types in `js/src/` instead of TypeScript compiled to `dist/`. Browsers load it without a build, so the Composer package now carries a usable runtime; the npm package ships the same files with type declarations generated at packing time.

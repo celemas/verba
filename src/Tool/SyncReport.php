@@ -12,7 +12,7 @@ namespace Celema\Verba\Tool;
 final class SyncReport
 {
 	/**
-	 * @param array<string, array{added: int, obsolete: int, total: int, changed: bool}> $locales
+	 * @param array<string, array{added: int, obsolete: int, total: int, changed: bool, vanished: list<string>}> $locales
 	 * @param list<string> $warnings
 	 */
 	public function __construct(

@@ -40,6 +40,8 @@ class StatusTest extends TestCase
 		$this->assertSame(1, $de['untranslated']);
 		$this->assertSame(0, $de['missing']);
 		$this->assertSame(2, $de['obsolete']);
+		$this->assertSame(['Old'], $de['parked']);
+		$this->assertSame(['Extra'], $de['vanished']);
 		$this->assertSame(2, $de['total']);
 		$this->assertFalse($report->clean());
 	}
@@ -75,6 +77,8 @@ class StatusTest extends TestCase
 		$this->assertSame(1, $de['untranslated']);
 		$this->assertSame(1, $de['missing']);
 		$this->assertSame(3, $de['obsolete']);
+		$this->assertSame(['[menu] Old'], $de['parked']);
+		$this->assertSame(['[menu] Extra', '[wrong] Open'], $de['vanished']);
 		$this->assertSame(3, $de['total']);
 		$this->assertCount(2, $de['locations']);
 	}

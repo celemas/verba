@@ -39,7 +39,7 @@ final class Sync
 	/**
 	 * @param array<string, Message> $fresh
 	 * @param array<string, array<string, Message>> $freshContexts
-	 * @return array{added: int, obsolete: int, total: int, changed: bool}
+	 * @return array{added: int, obsolete: int, total: int, changed: bool, vanished: list<string>}
 	 */
 	private function reconcile(string $locale, array $fresh, array $freshContexts): array
 	{
@@ -58,6 +58,12 @@ final class Sync
 			);
 			$contexts[$context] = $section['messages'];
 			$added += $section['added'];
+		}
+
+		$vanished = self::vanished($catalog->messages, $fresh);
+
+		foreach ($catalog->contexts as $context => $contextMessages) {
+			$vanished = [...$vanished, ...self::vanished($contextMessages, $freshContexts[$context] ?? [], $context)];
 		}
 
 		if ($this->prune) {
@@ -87,7 +93,31 @@ final class Sync
 			'obsolete' => count($obsolete) + self::contextSize($obsoleteContexts),
 			'total' => count($messages) + self::contextSize($contexts),
 			'changed' => $changed,
+			'vanished' => $vanished,
 		];
+	}
+
+	/**
+	 * The ids of a live section that the source no longer holds, which this
+	 * run parks or, when pruning, drops. A contextual id reads `[context] id`.
+	 *
+	 * @param array<string, string|list<string>|null> $messages
+	 * @param array<string, Message> $fresh
+	 * @return list<string>
+	 */
+	private static function vanished(array $messages, array $fresh, ?string $context = null): array
+	{
+		$ids = [];
+
+		foreach (array_keys($messages) as $id) {
+			if (array_key_exists($id, $fresh)) {
+				continue;
+			}
+
+			$ids[] = $context === null ? $id : "[{$context}] {$id}";
+		}
+
+		return $ids;
 	}
 
 	/**

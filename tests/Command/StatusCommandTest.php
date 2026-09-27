@@ -112,6 +112,27 @@ class StatusCommandTest extends TestCase
 		$this->assertStringContainsString('src/x.php', $output);
 	}
 
+	public function testWhereNamesTheObsoleteIds(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg'], 'obsolete' => ['Old' => 'Alt']];\n",
+		);
+
+		$_SERVER['argv'] = ['run', 'i18n:status'];
+		[, $counted] = $this->capture(new StatusCommand([$this->domain(['de'])]));
+
+		$this->assertStringContainsString('2 obsolete', $counted);
+		$this->assertStringNotContainsString('Gone', $counted);
+
+		$_SERVER['argv'] = ['run', 'i18n:status', '--where'];
+		[, $named] = $this->capture(new StatusCommand([$this->domain(['de'])]));
+
+		$this->assertStringContainsString("    vanished: Gone\n", $named);
+		$this->assertStringContainsString("    parked: Old\n", $named);
+	}
+
 	public function testShowsWarnings(): void
 	{
 		$_SERVER['argv'] = ['run', 'i18n:status'];

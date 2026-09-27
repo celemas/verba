@@ -18,7 +18,7 @@ use Celema\Verba\Tool\Status;
  */
 #[Command('i18n:status', 'Report translation gaps per domain and locale')]
 #[Opt('--strict', 'Exit non-zero when anything is missing, untranslated, or obsolete')]
-#[Opt('--where', 'List the source locations of the gaps')]
+#[Opt('--where', 'List the source locations of the gaps and the obsolete ids')]
 final class StatusCommand
 {
 	/**
@@ -53,6 +53,15 @@ final class StatusCommand
 				if ($where) {
 					foreach ($stat['locations'] as $location) {
 						$io->echoln('    ' . $location);
+					}
+
+					// Vanished ids are still in the live section; a sync parks them.
+					foreach ($stat['vanished'] as $id) {
+						$io->echoln('    vanished: ' . $id);
+					}
+
+					foreach ($stat['parked'] as $id) {
+						$io->echoln('    parked: ' . $id);
 					}
 				}
 			}

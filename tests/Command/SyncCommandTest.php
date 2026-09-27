@@ -72,9 +72,25 @@ class SyncCommandTest extends TestCase
 			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg']];\n",
 		);
 
-		$this->capture(new SyncCommand([$this->domain()]));
+		[$output] = $this->capture(new SyncCommand([$this->domain()]));
 
 		$this->assertSame([], CatalogFile::load($this->tmpDir() . '/i18n/app.de.php')->obsolete);
+		$this->assertStringContainsString("    dropped: Gone\n", $output);
+	}
+
+	public function testNamesTheMessagesItParks(): void
+	{
+		$_SERVER['argv'] = ['run', 'i18n:sync'];
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['A' => 'Ae', 'Gone' => 'Weg']];\n",
+		);
+
+		[$output] = $this->capture(new SyncCommand([$this->domain()]));
+
+		$this->assertStringContainsString('1 obsolete', $output);
+		$this->assertStringContainsString("    parked: Gone\n", $output);
 	}
 
 	public function testWarningsAreShown(): void
