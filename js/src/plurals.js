@@ -1,12 +1,15 @@
-export type PluralRule = (n: number) => number;
+/** @typedef {(n: number) => number} PluralRule */
 
 /**
  * Returns the rule mapping a count to its zero-based plural form index —
  * the same classic gettext formulas as the PHP runtime. Only the exceptions
  * are listed; every other language falls through to the two-form `n !== 1`
  * default. Region subtags are honored where they change the rule.
+ *
+ * @param {string} key
+ * @returns {PluralRule}
  */
-export function pluralRule(key: string): PluralRule {
+export function pluralRule(key) {
 	const norm = key.toLowerCase().replaceAll('-', '_');
 	const lang = norm.split('_')[0];
 

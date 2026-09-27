@@ -143,7 +143,7 @@ $domain = new Domain(
 
 ## JavaScript runtime
 
-The [`@celema/verba`](js/) npm package mirrors the runtime in the browser: the same eight functions, contexts, plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
+The JavaScript runtime in [`js/`](js/) mirrors the PHP one in the browser: the same eight functions, contexts, plural rules, and named `:placeholder` interpolation (positional `sprintf` arguments stay PHP-only). Hand it the catalogs with `Translator::exportMany()`, inlined as JSON — list only domains meant for the browser, since the payload is readable in the page source:
 
 ```php
 <script id="verba-catalog" type="application/json">
@@ -160,6 +160,8 @@ __('Save');
 __p('menu', 'Open');
 __n(':count file', ':count files', 3); // ':count' is bound automatically
 ```
+
+The runtime is plain ES modules with JSDoc types in `js/src/`, so a browser loads it as it is: the Composer package carries it, and an import map can point `@celema/verba` at `js/src/index.js`. The [`@celema/verba`](https://www.npmjs.com/package/@celema/verba) npm package ships the same files plus type declarations for bundlers.
 
 With no translator active the functions return the interpolated message id, mirroring PHP. During SSR, `loadAndActivate()` returns `null` because no DOM is available, so the global helpers use this fallback. Do not call the module-global `activate()` from a request handler because concurrent requests could share translators. The helper API does not currently support request-local translated SSR.
 

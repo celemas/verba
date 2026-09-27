@@ -59,7 +59,7 @@ frontend should use named `:placeholder` arguments.
 
 - `pnpm test` runs the Vitest suite.
 - `pnpm check` type-checks and verifies formatting.
-- `pnpm build` emits ESM and type declarations to `dist/`.
+- `pnpm types` writes type declarations to `types/`; packing for npm runs it.
 
 ## License
 

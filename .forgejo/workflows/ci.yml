@@ -40,9 +40,9 @@ jobs:
         working-directory: js
         run: pnpm test
 
-      - name: Build JavaScript package
+      - name: Generate JavaScript type declarations
         working-directory: js
-        run: pnpm build
+        run: pnpm types
 
       - name: Run tests with coverage
         run: composer coverage:test

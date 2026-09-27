@@ -22,21 +22,22 @@
 	},
 	"exports": {
 		".": {
-			"types": "./dist/index.d.ts",
-			"default": "./dist/index.js"
+			"types": "./types/index.d.ts",
+			"default": "./src/index.js"
 		}
 	},
 	"files": [
-		"dist"
+		"src",
+		"types"
 	],
 	"sideEffects": false,
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
 		"check": "tsc && prettier --check .",
 		"format": "prettier --write .",
-		"prepack": "pnpm run build",
+		"prepack": "pnpm run types",
 		"prepublishOnly": "pnpm run check && pnpm run test",
-		"test": "vitest run"
+		"test": "vitest run",
+		"types": "tsc -p tsconfig.types.json"
 	},
 	"devDependencies": {
 		"prettier": "^3.9.4",

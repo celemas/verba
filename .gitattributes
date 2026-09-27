@@ -8,3 +8,11 @@
 /docs/ export-ignore
 /tests/ export-ignore
 /bench/ export-ignore
+
+# The Composer package carries the browser runtime in js/src; the JS
+# tooling stays in the repository.
+/js/.* export-ignore
+/js/tests/ export-ignore
+/js/pnpm-lock.yaml export-ignore
+/js/prettier.config.js export-ignore
+/js/tsconfig*.json export-ignore
