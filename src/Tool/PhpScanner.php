@@ -40,12 +40,12 @@ final class PhpScanner extends FileScanner
 
 			if (
 				$before !== null
-					&& $tokens[$before]->is([
-						T_OBJECT_OPERATOR,
-						T_NULLSAFE_OBJECT_OPERATOR,
-						T_DOUBLE_COLON,
-						T_FUNCTION,
-					])
+				&& $tokens[$before]->is([
+					T_OBJECT_OPERATOR,
+					T_NULLSAFE_OBJECT_OPERATOR,
+					T_DOUBLE_COLON,
+					T_FUNCTION,
+				])
 			) {
 				continue;
 			}

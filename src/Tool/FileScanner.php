@@ -156,8 +156,8 @@ abstract class FileScanner implements Scanner
 			foreach ($tree as $entry) {
 				if (
 					!$entry instanceof SplFileInfo
-						|| !$entry->isFile()
-						|| !in_array(strtolower($entry->getExtension()), $this->extensions(), true)
+					|| !$entry->isFile()
+					|| !in_array(strtolower($entry->getExtension()), $this->extensions(), true)
 				) {
 					continue;
 				}
