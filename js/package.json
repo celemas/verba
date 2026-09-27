@@ -1,6 +1,6 @@
 {
 	"name": "@celema/verba",
-	"version": "0.3.0",
+	"version": "0.5.0",
 	"description": "JavaScript runtime for Celema Verba translation catalogs",
 	"license": "MIT",
 	"homepage": "https://celema.dev/verba",
