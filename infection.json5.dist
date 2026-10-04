@@ -9,10 +9,102 @@
 		html: '.infection/infection.html',
 		summary: '.infection/summary.log',
 	},
+	// Ratchet: raise these with the reached score, never lower them.
+	minMsi: 99,
+	minCoveredMsi: 99,
 	// CI mutates only the lines changed by a push; pushes without source
 	// changes produce no mutants and must not fail the threshold.
 	ignoreMsiWithNoMutations: true,
+	// Ignores below cover equivalent mutants: they change no observable behavior.
+	// Keep them scoped to a method so that new code elsewhere is still mutated.
+	// Where a method also has killed mutants of the same kind, match the source
+	// line by regex instead (`ignoreSourceCodeByRegex` applies to the removed
+	// diff lines across the whole codebase). Avoid `Class::method::line` pins:
+	// unrelated edits that move the line break the run.
 	mutators: {
 		'@default': true,
+
+		// Memoization: without the cache, the same value is rebuilt.
+		AssignCoalesce: {
+			ignore: [
+				'Celema\\Verba\\Translator::catalog',
+				'Celema\\Verba\\Verba::current',
+			],
+		},
+		// Duplicate fallback locales or context names only repeat identical
+		// lookups, and the locale list is never read by index.
+		UnwrapArrayUnique: {
+			ignore: [
+				'Celema\\Verba\\Translator::__construct',
+				'Celema\\Verba\\Tool\\Sync::parkContexts',
+			],
+		},
+		UnwrapArrayValues: {
+			ignore: ['Celema\\Verba\\Translator::__construct'],
+		},
+		// strtr() converts replacement values to strings itself.
+		CastString: {
+			ignore: ['Celema\\Verba\\Interpolate::apply'],
+		},
+		// Argument parsers: the early return at the closing paren only affects
+		// arguments after the literal ones (ids, plurals, contexts, and domains
+		// always come first), and the scan loop finds nested calls on its own.
+		ReturnRemoval: {
+			ignore: [
+				'Celema\\Verba\\Tool\\PhpScanner::arguments',
+				'Celema\\Verba\\Tool\\JavascriptScanner::arguments',
+			],
+		},
+		// Literal segments are always balanced, so the loop never reads past
+		// the end; trivia skipping returns from inside its loop.
+		LessThan: {
+			ignore: [
+				'Celema\\Verba\\Tool\\JavascriptScanner::literal',
+				'Celema\\Verba\\Tool\\JavascriptScanner::skipTrivia',
+			],
+		},
+		// Comment terminators cannot start one character later or earlier
+		// than searched: the skipped characters are part of the opener.
+		DecrementInteger: {
+			ignoreSourceCodeByRegex: [
+				"\\$i = \\$this->skipTo\\(\\$code, \\$i \\+ 4, '-->'\\);",
+				'\\$i = \\$this->skipTo\\(\\$code, \\$i \\+ 2, "\\\\n"\\);',
+				'return \\$this->skipTo\\(\\$code, \\$i \\+ 2, "\\\\n"\\);',
+				// Interpolation bounds: an extra `{` or `}` at either end of the
+				// collected code is harmless, and the closing `}` is re-read as text.
+				'\\$start = \\$i \\+ 2;',
+				'\\$after = \\$this->skipBraces\\(\\$code, \\$i \\+ 1\\);',
+				"\\$end = \\(\\$code\\[\\$after - 1\\] \\?\\? ''\\) === '}' \\? \\$after - 1 : \\$after;",
+				// Temporary file names only need to be unique.
+				"\\$temp = sprintf\\('%s\\.%s\\.tmp', \\$file, bin2hex\\(random_bytes\\(6\\)\\)\\);",
+			],
+		},
+		IncrementInteger: {
+			ignoreSourceCodeByRegex: [
+				'\\$i = \\$after - 1;',
+				"\\$temp = sprintf\\('%s\\.%s\\.tmp', \\$file, bin2hex\\(random_bytes\\(6\\)\\)\\);",
+			],
+		},
+		Minus: {
+			ignoreSourceCodeByRegex: [
+				"\\$end = \\(\\$code\\[\\$after - 1\\] \\?\\? ''\\) === '}' \\? \\$after - 1 : \\$after;",
+			],
+		},
+		Coalesce: {
+			ignoreSourceCodeByRegex: [
+				"\\$end = \\(\\$code\\[\\$after - 1\\] \\?\\? ''\\) === '}' \\? \\$after - 1 : \\$after;",
+			],
+		},
+		Plus: {
+			ignoreSourceCodeByRegex: ['return \\$this->skipTo\\(\\$code, \\$i \\+ 2, "\\\\n"\\);'],
+		},
+		// Regex flags are letters, which the scanner skips as identifiers anyway.
+		While_: {
+			ignoreSourceCodeByRegex: ['while \\(\\$i < \\$length && ctype_alpha\\(\\$code\\[\\$i\\]\\)\\) \\{'],
+		},
+		// Only differs when another process creates the directory concurrently.
+		LogicalAnd: {
+			ignoreSourceCodeByRegex: ['if \\(!mkdir\\(\\$dir, 0o755, true\\) && !is_dir\\(\\$dir\\)\\) \\{'],
+		},
 	},
 }
