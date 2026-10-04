@@ -35,15 +35,11 @@ final class Catalog
 	 */
 	public static function load(string $file, string $locale): self
 	{
-		if (!is_file($file)) {
-			return new self([], $locale);
-		}
-
 		/** @var mixed $data */
-		$data = require $file;
+		$data = is_file($file) ? (require $file) : [];
 
 		if (!is_array($data)) {
-			return new self([], $locale);
+			$data = [];
 		}
 
 		return new self(

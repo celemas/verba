@@ -30,15 +30,11 @@ final class CatalogFile
 
 	public static function load(string $file): self
 	{
-		if (!is_file($file)) {
-			return new self([], [], null);
-		}
-
 		/** @var mixed $data */
-		$data = require $file;
+		$data = is_file($file) ? (require $file) : [];
 
 		if (!is_array($data)) {
-			return new self([], [], null);
+			$data = [];
 		}
 
 		return new self(
