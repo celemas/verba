@@ -7,7 +7,9 @@ namespace Celema\Verba\Tests\Tool;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\Domain;
 use Celema\Verba\Tool\Extractor;
+use Celema\Verba\Tool\Message;
 use Celema\Verba\Tool\PhpScanner;
+use Celema\Verba\Tool\Scanner;
 
 class ExtractorTest extends TestCase
 {
@@ -70,6 +72,31 @@ class ExtractorTest extends TestCase
 		$this->assertSame(['a', 'b'], array_keys($result['messages']));
 		$this->assertSame(['menu', 'state'], array_keys($result['contexts']));
 		$this->assertSame(['x', 'z'], array_keys($result['contexts']['menu']));
+	}
+
+	public function testMergesEveryLocationFromEachScannedMessage(): void
+	{
+		$scanner = new class implements Scanner {
+			public function scan(): array
+			{
+				return [
+					new Message(null, 'A', null, ['a.js:1', 'a.js:2']),
+					new Message(null, 'A', null, ['b.js:3', 'b.js:4']),
+					new Message(null, 'A', null, ['c.js:5']),
+				];
+			}
+
+			public function warnings(): array
+			{
+				return [];
+			}
+		};
+		$domain = new Domain('app', $this->tmpDir() . '/i18n', ['de'], [$scanner], default: true);
+
+		$this->assertSame(
+			['a.js:1', 'a.js:2', 'b.js:3', 'b.js:4', 'c.js:5'],
+			new Extractor($domain)->extract()['messages']['A']->locations,
+		);
 	}
 
 	public function testNonDefaultDomainTakesOnlyItsCalls(): void

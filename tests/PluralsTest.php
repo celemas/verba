@@ -34,6 +34,7 @@ class PluralsTest extends TestCase
 	}
 
 	#[DataProvider('provideRule')]
+	#[DataProvider('provideManyFormRule')]
 	public function testRule(string $locale, int $n, int $expected): void
 	{
 		$this->assertSame($expected, Plurals::rule($locale)($n));
@@ -66,6 +67,15 @@ class PluralsTest extends TestCase
 			// single form
 			['ja', 5, 0],
 			['zh', 1, 0],
+		];
+	}
+
+	/**
+	 * @return list<array{string, int, int}>
+	 */
+	public static function provideManyFormRule(): array
+	{
+		return [
 			// Russian family
 			['ru', 1, 0],
 			['ru', 21, 0],
@@ -91,7 +101,10 @@ class PluralsTest extends TestCase
 			['pl', 2, 1],
 			['pl', 22, 1],
 			['pl', 5, 2],
+			['pl', 10, 2],
 			['pl', 12, 2],
+			['pl', 21, 2],
+			['pl', 72, 1],
 			['pl', 23, 1],
 			['pl', 24, 1],
 			['pl', 25, 2],

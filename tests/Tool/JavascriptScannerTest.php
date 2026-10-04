@@ -68,11 +68,20 @@ class JavascriptScannerTest extends TestCase
 			__('S9');
 			</script>
 			<i>{{ __('M11') }}</i>
+			<script
+			  lang="ts"
+			>
+			const s = "__('scriptString')";
+			__('S16');
+			</script>
 			VUE;
 
+		$scanner = $this->scanOne('lines.vue', $code);
+
+		$this->assertSame(['T2', 'S5', 'M7', 'S9', 'M11', 'S16'], $this->ids($scanner));
 		$this->assertSame(
-			['T2' => '2', 'S5' => '5', 'M7' => '7', 'S9' => '9', 'M11' => '11'],
-			$this->lines($this->scanOne('lines.vue', $code)),
+			['T2' => '2', 'S5' => '5', 'M7' => '7', 'S9' => '9', 'M11' => '11', 'S16' => '16'],
+			$this->lines($scanner),
 		);
 	}
 
@@ -157,6 +166,126 @@ class JavascriptScannerTest extends TestCase
 		$code = "const r = /[\n__('InClass')]/;\n__('Real');\n";
 
 		$this->assertSame(['Real'], $this->ids($this->scanOne('re.js', $code)));
+	}
+
+	public function testEndsCommentsAtTheirFirstTerminator(): void
+	{
+		$code =
+			"<!---->__('AfterEmptyHtmlComment');\n"
+			. "//\n__('AfterEmptyLineComment');\n"
+			. "/**/__('AfterEmptyBlockComment');\n"
+			. "/*/ __('Hidden') */__('AfterSlashComment');\n";
+
+		$this->assertSame(
+			['AfterEmptyHtmlComment', 'AfterEmptyLineComment', 'AfterEmptyBlockComment', 'AfterSlashComment'],
+			$this->ids($this->scanOne('c.js', $code)),
+		);
+	}
+
+	public function testAllowsEmptyCommentsInsideAndBeforeArguments(): void
+	{
+		$code = "__(//\n'Line');\n__(/**/'Block');\n__(/*/ ) */'Odd');\n__//\n('Before');\n__/**/('BeforeBlock');\n";
+
+		$this->assertSame(
+			['Line', 'Block', 'Odd', 'Before', 'BeforeBlock'],
+			$this->ids($this->scanOne('c.js', $code)),
+		);
+	}
+
+	public function testIgnoresCallNameAtEndOfFileOrWithoutParen(): void
+	{
+		$scanner = $this->scanOne('end.js', "__('A');\nx = __ + 1;\ny = __");
+
+		$this->assertSame(['A'], $this->ids($scanner));
+		$this->assertSame([], $scanner->warnings());
+	}
+
+	public function testWarnsAboutTheArgumentThatIsNotLiteral(): void
+	{
+		$scanner = $this->scanOne('w.js', "__p(ctx('menu'), 'Open');\n__p(list[0], 'Open');\n");
+
+		$this->assertSame([], $scanner->scan());
+		$this->assertCount(2, $scanner->warnings());
+		$this->assertStringStartsWith('Non-literal context', $scanner->warnings()[0]);
+		$this->assertStringStartsWith('Non-literal context', $scanner->warnings()[1]);
+	}
+
+	public function testBareIdentifierArgumentIsNotLiteral(): void
+	{
+		$scanner = $this->scanOne('w.js', "__(aba);\n");
+
+		$this->assertSame([], $scanner->scan());
+		$this->assertStringStartsWith('Non-literal message id', $scanner->warnings()[0]);
+	}
+
+	public function testKeepsDollarAndBraceInLiteralArguments(): void
+	{
+		$code = <<<'JS'
+			__("cost ${x}");
+			__('a{b}');
+			__(`price $5`);
+			__(`brace {b}`);
+			JS;
+
+		$this->assertSame(
+			['cost ${x}', 'a{b}', 'price $5', 'brace {b}'],
+			$this->ids($this->scanOne('lit.js', $code)),
+		);
+	}
+
+	public function testSkipsTemplateTextAroundDollarAndBrace(): void
+	{
+		$code = <<<'JS'
+			const a = `price $value __('NotACall')`;
+			const b = `set {__('NotACall')}`;
+			const c = `${ "__('InString')" }`;
+			__('After');
+			JS;
+
+		$this->assertSame(['After'], $this->ids($this->scanOne('t.js', $code)));
+	}
+
+	public function testDollarBraceInQuotedArgumentIsPlainText(): void
+	{
+		$messages = $this->scanOne('q.js', "__d(\"\${'\", 'msg');\n")->scan();
+
+		$this->assertSame(['msg'], array_map(static fn(Message $m): string => $m->id, $messages));
+		$this->assertSame("\${'", $messages[0]->domain);
+	}
+
+	public function testSkipsInterpolationsOfTemplateArguments(): void
+	{
+		$scanner = $this->scanOne('t.js', "__d(`\${'`'}`, 'msg');\n");
+
+		$this->assertSame([], $scanner->scan());
+		$this->assertCount(1, $scanner->warnings());
+		$this->assertStringStartsWith('Non-literal domain', $scanner->warnings()[0]);
+	}
+
+	public function testExtractsFromUnterminatedInterpolation(): void
+	{
+		$this->assertSame(['Unclosed'], $this->ids($this->scanOne('t.js', "const t = `\${__('Unclosed')")));
+	}
+
+	public function testSkipsNestedTemplatesInsideArguments(): void
+	{
+		$code = <<<'JS'
+			__('A', `${ `)` } __('NotACall')`);
+			__('B');
+			JS;
+
+		$this->assertSame(['A', 'B'], $this->ids($this->scanOne('t.js', $code)));
+	}
+
+	public function testRegexDetectionLooksAtTheFirstCharacter(): void
+	{
+		$this->assertSame(['Div'], $this->ids($this->scanOne('d.js', "a/__('Div')/2;\n")));
+		$this->assertSame(['Real'], $this->ids($this->scanOne('r.js', "return/__(\"Skip\")/;\n__('Real');\n")));
+	}
+
+	public function testRegexEndsAtItsClosingSlash(): void
+	{
+		$this->assertSame(['Real'], $this->ids($this->scanOne('r.js', "/x __(\"Skip\")/;\n__('Real');\n/end/")));
 	}
 
 	public function testAllowsAnyWhitespaceBeforeCallParen(): void
@@ -347,6 +476,31 @@ class JavascriptScannerTest extends TestCase
 		$this->assertContains('Bad surrogate ', $ids);
 	}
 
+	#[DataProvider('provideExactDecodes')]
+	public function testDecodesEscapesExactly(string $literal, string $expected): void
+	{
+		$this->assertSame([$expected], $this->ids($this->scanOne('e.js', "__({$literal});\n")));
+	}
+
+	/**
+	 * @return iterable<string, array{string, string}>
+	 */
+	public static function provideExactDecodes(): iterable
+	{
+		yield 'lowest surrogate pair' => ['"\\uD800\\uDC00"', "\u{10000}"];
+		yield 'highest surrogate pair' => ['"\\uDBFF\\uDFFF"', "\u{10FFFF}"];
+		yield 'low surrogate after plain escape' => ['"\\u0041\\uDC00"', 'A'];
+		yield 'plain escape after high surrogate' => ['"\\uD83D\\u0041"', 'A'];
+		yield 'high surrogate before other text' => ['"\\uD83DXuDE00"', 'XuDE00'];
+		yield 'high surrogate before hex digits' => ['"\\uD83DabDE00"', 'abDE00'];
+		yield 'high surrogate before hex escape' => ['"\\uD83D\\x41DE00"', 'ADE00'];
+		yield 'brace before braced escape' => ['"}\\u{41}"', '}A'];
+		yield 'non-hex braced escape' => ['"\\u{zz}"', 'u{zz}'];
+		yield 'non-hex fixed escape' => ['"\\u00zz"', 'u00zz'];
+		yield 'short fixed escape' => ['"\\u12"', 'u12'];
+		yield 'unclosed long braced escape' => ['"\\u{4142434445"', 'u{4142434445'];
+	}
+
 	public function testSkipsRegexLiterals(): void
 	{
 		$code = <<<'JS'
@@ -446,13 +600,10 @@ class JavascriptScannerTest extends TestCase
 			</script>
 			VUE;
 
-		$ids = $this->ids($this->scanOne('d.vue', $code));
-
-		$this->assertContains('AfterUrl', $ids);
-		$this->assertContains('AttrCall', $ids);
-		$this->assertContains('Mustache', $ids);
-		$this->assertContains('ScriptReal', $ids);
-		$this->assertNotContains('scriptString', $ids);
+		$this->assertSame(
+			['AfterUrl', 'AttrCall', 'Mustache', 'ScriptReal'],
+			$this->ids($this->scanOne('d.vue', $code)),
+		);
 	}
 
 	public function testScansDirectoryAcrossDialectsAndSkipsForeignFiles(): void
@@ -460,11 +611,12 @@ class JavascriptScannerTest extends TestCase
 		$this->write('app/a.jsx', "__('Jsx');\n");
 		$this->write('app/b.tsx', "__('Tsx');\n");
 		$this->write('app/c.ts', "__('Ts');\n");
+		$this->write('app/d.js', "__('Js');\n");
 		$this->write('app/styles.css', "__('Css');\n");
 
 		$ids = $this->ids(new JavascriptScanner([$this->tmpDir() . '/app']));
 		sort($ids);
 
-		$this->assertSame(['Jsx', 'Ts', 'Tsx'], $ids);
+		$this->assertSame(['Js', 'Jsx', 'Ts', 'Tsx'], $ids);
 	}
 }
