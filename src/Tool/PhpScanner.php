@@ -130,7 +130,7 @@ final class PhpScanner extends FileScanner
 				$depth--;
 
 				if ($depth === 0) {
-					if ($current !== [] || $args !== []) {
+					if ($current !== []) {
 						$args[] = $this->literal($current);
 					}
 

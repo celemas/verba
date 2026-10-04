@@ -229,7 +229,7 @@ final class Sync
 				}
 			}
 
-			$temp = $file . '.' . bin2hex(random_bytes(6)) . '.tmp';
+			$temp = sprintf('%s.%s.tmp', $file, bin2hex(random_bytes(6)));
 			$error = null;
 
 			if (file_put_contents($temp, $contents) !== strlen($contents)) {
