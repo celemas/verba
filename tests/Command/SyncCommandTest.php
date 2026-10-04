@@ -93,6 +93,18 @@ class SyncCommandTest extends TestCase
 		$this->assertStringContainsString("    parked: Gone\n", $output);
 	}
 
+	public function testMarksUnchangedCatalogs(): void
+	{
+		$_SERVER['argv'] = ['run', 'i18n:sync'];
+		$this->write('src/x.php', "<?php\n__('A');\n");
+
+		[$first] = $this->capture(new SyncCommand([$this->domain()]));
+		[$second] = $this->capture(new SyncCommand([$this->domain()]));
+
+		$this->assertStringContainsString("  de  1 messages, 1 added, 0 obsolete\n", $first);
+		$this->assertStringContainsString("  de  1 messages, 0 added, 0 obsolete (unchanged)\n", $second);
+	}
+
 	public function testWarningsAreShown(): void
 	{
 		$_SERVER['argv'] = ['run', 'i18n:sync'];
@@ -100,7 +112,7 @@ class SyncCommandTest extends TestCase
 
 		[, $error] = $this->capture(new SyncCommand([$this->domain()]));
 
-		$this->assertStringContainsString('Non-literal message id', $error);
+		$this->assertMatchesRegularExpression('/^(\e\[[0-9;]*m)?  Non-literal message id/m', $error);
 	}
 
 	public function testReturnsZero(): void

@@ -114,6 +114,44 @@ class SyncTest extends TestCase
 		$this->assertSame(['[menu] Gone'], $report->locales['de']['vanished']);
 	}
 
+	public function testHandlesSeveralContextsAtOnce(): void
+	{
+		$this->write('src/x.php', "<?php\n__p('menu', 'Open');\n__p('state', 'Open');\n__p('kept', 'Here');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['Gone' => 'Weg', 'Lost' => 'Verloren'], "
+				. "'contexts' => ['kept' => ['Here' => 'Hier'], 'a' => ['X' => 'x'], 'b' => ['Y' => 'y']], "
+				. "'obsolete_contexts' => ['c' => ['Z' => 'z']]];\n",
+		);
+
+		$report = new Sync($this->domain())->run();
+		$catalog = $this->catalog();
+
+		$this->assertSame(2, $report->locales['de']['added']);
+		$this->assertSame(['Gone', 'Lost', '[a] X', '[b] Y'], $report->locales['de']['vanished']);
+		$this->assertSame(['Here' => 'Hier'], $catalog->contexts['kept']);
+		$this->assertSame(
+			['a' => ['X' => 'x'], 'b' => ['Y' => 'y'], 'c' => ['Z' => 'z']],
+			$catalog->obsoleteContexts,
+		);
+	}
+
+	public function testCreatesCatalogDirectoryWithStandardPermissions(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$dir = $this->tmpDir() . '/nested/i18n';
+		$umask = umask(0o022);
+
+		try {
+			new Sync($this->domain($dir))->run();
+		} finally {
+			umask($umask);
+		}
+
+		clearstatcache();
+		$this->assertSame(0o755, fileperms($dir) & 0o777);
+	}
+
 	public function testSecondRunIsIdempotent(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");
@@ -150,13 +188,19 @@ class SyncTest extends TestCase
 	{
 		$blocked = $this->write('blocked', 'not a directory');
 
+		error_clear_last();
+
 		try {
 			new Sync($this->domain($blocked))->run();
 			self::fail('Expected catalog directory creation to fail');
 		} catch (RuntimeException $exception) {
-			$this->assertStringContainsString('Cannot create catalog directory', $exception->getMessage());
-			$this->assertStringContainsString('mkdir(', $exception->getMessage());
+			$this->assertStringStartsWith(
+				"Cannot create catalog directory '{$blocked}': mkdir(",
+				$exception->getMessage(),
+			);
 		}
+
+		$this->assertNull(error_get_last());
 	}
 
 	public function testKeepsCatalogWhenTemporaryWriteFails(): void
@@ -177,8 +221,10 @@ class SyncTest extends TestCase
 			new Sync($this->domain())->run();
 			self::fail('Expected the temporary catalog write to fail');
 		} catch (RuntimeException $exception) {
-			$this->assertStringContainsString('Cannot write temporary catalog', $exception->getMessage());
-			$this->assertStringContainsString('file_put_contents(', $exception->getMessage());
+			$this->assertStringStartsWith(
+				"Cannot write temporary catalog for '{$file}': file_put_contents(",
+				$exception->getMessage(),
+			);
 		} finally {
 			chmod($dir, 0o755);
 		}
@@ -195,8 +241,7 @@ class SyncTest extends TestCase
 			new Sync($this->domain())->run();
 			self::fail('Expected the catalog replacement to fail');
 		} catch (RuntimeException $exception) {
-			$this->assertStringContainsString('Cannot replace catalog', $exception->getMessage());
-			$this->assertStringContainsString('rename(', $exception->getMessage());
+			$this->assertStringStartsWith("Cannot replace catalog '{$file}': rename(", $exception->getMessage());
 		}
 
 		$this->assertFileExists($marker);

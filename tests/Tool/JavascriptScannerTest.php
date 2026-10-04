@@ -7,6 +7,7 @@ namespace Celema\Verba\Tests\Tool;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\JavascriptScanner;
 use Celema\Verba\Tool\Message;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class JavascriptScannerTest extends TestCase
 {
@@ -21,6 +22,148 @@ class JavascriptScannerTest extends TestCase
 	private function scanOne(string $name, string $code): JavascriptScanner
 	{
 		return new JavascriptScanner([$this->write($name, $code)]);
+	}
+
+	/**
+	 * @return array<string, string> Message id to its first location's line.
+	 */
+	private function lines(JavascriptScanner $scanner): array
+	{
+		$lines = [];
+
+		foreach ($scanner->scan() as $message) {
+			$lines[$message->id] = substr($message->locations[0], strrpos($message->locations[0], ':') + 1);
+		}
+
+		return $lines;
+	}
+
+	public function testRecordsFileAndLineOfCalls(): void
+	{
+		$code = <<<'JS'
+			__('L1');
+			const t = `
+			  ${__('L3')}
+			`;
+			__('L5');
+			JS;
+		$file = $this->write('lines.js', $code);
+		$scanner = new JavascriptScanner([$file]);
+
+		$this->assertSame(['L1' => '1', 'L3' => '3', 'L5' => '5'], $this->lines($scanner));
+		$this->assertSame("{$file}:1", $scanner->scan()[0]->locations[0]);
+	}
+
+	public function testRecordsVueLinesAcrossScriptBlocks(): void
+	{
+		$code = <<<'VUE'
+			<template>
+			  {{ __('T2') }}
+			</template>
+			<script>
+			__('S5');
+			</script>
+			<p>{{ __('M7') }}</p>
+			<script setup>
+			__('S9');
+			</script>
+			<i>{{ __('M11') }}</i>
+			VUE;
+
+		$this->assertSame(
+			['T2' => '2', 'S5' => '5', 'M7' => '7', 'S9' => '9', 'M11' => '11'],
+			$this->lines($this->scanOne('lines.vue', $code)),
+		);
+	}
+
+	public function testTreatsUppercaseVueExtensionAsVue(): void
+	{
+		$this->assertSame(
+			['Attr'],
+			$this->ids($this->scanOne('E.VUE', "<b :title=\"__('Attr')\"></b>\n")),
+		);
+	}
+
+	#[DataProvider('provideRegexPrefixes')]
+	public function testSkipsRegexAfterOperatorsAndKeywords(string $prefix): void
+	{
+		$code = "x {$prefix}/__(\"Skip\")/;\n__('Real');\n";
+
+		$this->assertSame(['Real'], $this->ids($this->scanOne('re.js', $code)));
+	}
+
+	/**
+	 * @return iterable<string, array{string}>
+	 */
+	public static function provideRegexPrefixes(): iterable
+	{
+		foreach ([
+			'(',
+			'[',
+			'{',
+			'=',
+			',',
+			':',
+			';',
+			'!',
+			'&',
+			'|',
+			'?',
+			'+',
+			'-',
+			'*',
+			'~',
+			'%',
+			'^',
+			'<',
+			'>',
+		] as $char) {
+			yield $char => [$char];
+		}
+
+		foreach (['case', 'delete', 'instanceof', 'of', 'return', 'throw', 'typeof', 'void', 'yield'] as $keyword) {
+			yield $keyword => [$keyword . ' '];
+		}
+
+		yield 'tab' => ["=\t"];
+		yield 'newline' => ["=\n"];
+		yield 'carriage return' => ["=\r"];
+	}
+
+	public function testTreatsSlashAfterValuesAsDivision(): void
+	{
+		$code = <<<'JS'
+			a[0] / __('AfterBracket') / 2;
+			({}) / __('AfterBrace');
+			xreturn / __('AfterName') / 2;
+			typeofx / __('AfterLongerName') / 2;
+			JS;
+
+		$this->assertSame(
+			['AfterBracket', 'AfterBrace', 'AfterName', 'AfterLongerName'],
+			$this->ids($this->scanOne('div.js', $code)),
+		);
+	}
+
+	public function testUnterminatedRegexEndsAtLineBreak(): void
+	{
+		$code = "const r = /abc\n__('AfterNewline');\nconst s = /abc\r__('AfterReturn');\n";
+
+		$this->assertSame(['AfterNewline', 'AfterReturn'], $this->ids($this->scanOne('re.js', $code)));
+	}
+
+	public function testLineBreakInsideRegexClassDoesNotEndRegex(): void
+	{
+		$code = "const r = /[\n__('InClass')]/;\n__('Real');\n";
+
+		$this->assertSame(['Real'], $this->ids($this->scanOne('re.js', $code)));
+	}
+
+	public function testAllowsAnyWhitespaceBeforeCallParen(): void
+	{
+		$code = "__\t('Tab');\n__\r\n('Crlf');\n__\n('Newline');\n";
+
+		$this->assertSame(['Tab', 'Crlf', 'Newline'], $this->ids($this->scanOne('ws.js', $code)));
 	}
 
 	public function testExtractsAllCallForms(): void

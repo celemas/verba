@@ -87,6 +87,52 @@ class CatalogFileTest extends TestCase
 		$this->assertSame('ru', $reloaded->plural);
 	}
 
+	public function testRenderLayout(): void
+	{
+		$rendered = new CatalogFile(
+			['b' => 'B', 'a' => null, 'plural id' => ['form0', 'form1']],
+			['gone' => 'weg'],
+			'ru',
+			['state' => ['Open' => 'Offen'], 'menu' => ['Open' => 'Öffnen']],
+			['menu' => ['Old' => 'Alt']],
+		)->render();
+
+		$this->assertSame(
+			<<<'PHP'
+				<?php
+
+				declare(strict_types=1);
+
+				return [
+					'plural' => 'ru',
+					'messages' => [
+						'a' => null,
+						'b' => 'B',
+						'plural id' => ['form0', 'form1'],
+					],
+					'contexts' => [
+						'menu' => [
+							'Open' => 'Öffnen',
+						],
+						'state' => [
+							'Open' => 'Offen',
+						],
+					],
+					'obsolete' => [
+						'gone' => 'weg',
+					],
+					'obsolete_contexts' => [
+						'menu' => [
+							'Old' => 'Alt',
+						],
+					],
+				];
+
+				PHP,
+			$rendered,
+		);
+	}
+
 	public function testRenderWithoutPluralOrObsolete(): void
 	{
 		$rendered = new CatalogFile(['a' => 'A'], [], null, ['empty' => []], ['empty' => []])->render();
@@ -101,7 +147,7 @@ class CatalogFileTest extends TestCase
 	{
 		$file = $this->write(
 			'app.de.php',
-			"<?php\nreturn ['contexts' => ['good' => ['A' => 'B'], 'bad' => 'x', 3 => []], "
+			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B'], 3 => []], "
 				. "'obsolete_contexts' => 'bad'];\n",
 		);
 		$catalog = CatalogFile::load($file);

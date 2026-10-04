@@ -83,6 +83,27 @@ class StatusTest extends TestCase
 		$this->assertCount(2, $de['locations']);
 	}
 
+	public function testListsEveryLocationAndVanishedId(): void
+	{
+		$file = $this->write(
+			'src/x.php',
+			"<?php\n__('M');\n__('M');\n__('U');\n__('U');\n__p('ctx', 'C');\n__p('ctx', 'C');\n",
+		);
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['U' => null, 'Gone' => 'x', '42' => 'y'], "
+				. "'contexts' => ['old' => ['V1' => 'a', 'V2' => 'b']]];\n",
+		);
+
+		$de = new Status($this->domain(['de']))->run()->locales['de'];
+
+		$this->assertSame(
+			["{$file}:2", "{$file}:3", "{$file}:4", "{$file}:5", "{$file}:6", "{$file}:7"],
+			$de['locations'],
+		);
+		$this->assertSame(['Gone', '42', '[old] V1', '[old] V2'], $de['vanished']);
+	}
+
 	public function testCleanWhenFullyTranslated(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");

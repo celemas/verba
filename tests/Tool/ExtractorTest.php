@@ -48,13 +48,28 @@ class ExtractorTest extends TestCase
 		sort($ids);
 
 		$this->assertSame(['A', 'B', 'one'], $ids);
-		$this->assertCount(2, $result['messages']['A']->locations);
+		$this->assertSame(["{$file}:3", "{$file}:4"], $result['messages']['A']->locations);
 		$this->assertSame('many', $result['messages']['one']->plural);
 		$this->assertSame(['menu', 'state'], array_keys($result['contexts']));
 		$this->assertCount(2, $result['contexts']['menu']['A']->locations);
 		$this->assertSame('menu', $result['contexts']['menu']['A']->context);
 		$this->assertSame('state', $result['contexts']['state']['A']->context);
 		$this->assertNotEmpty($result['warnings']);
+	}
+
+	public function testSortsMessagesAndContexts(): void
+	{
+		$file = $this->write(
+			'src/x.php',
+			"<?php\n__('b');\n__('a');\n__p('state', 'y');\n__p('menu', 'z');\n__p('menu', 'x');\n",
+		);
+		$domain = new Domain('app', $this->tmpDir() . '/i18n', ['de'], [new PhpScanner([$file])], default: true);
+
+		$result = new Extractor($domain)->extract();
+
+		$this->assertSame(['a', 'b'], array_keys($result['messages']));
+		$this->assertSame(['menu', 'state'], array_keys($result['contexts']));
+		$this->assertSame(['x', 'z'], array_keys($result['contexts']['menu']));
 	}
 
 	public function testNonDefaultDomainTakesOnlyItsCalls(): void
@@ -90,11 +105,16 @@ class ExtractorTest extends TestCase
 		);
 
 		$result = new Extractor($domain)->extract();
-		$warnings = implode("\n", $result['warnings']);
 
-		$this->assertStringContainsString('Mixed singular and plural calls', $warnings);
-		$this->assertStringContainsString('Conflicting plural forms', $warnings);
-		$this->assertStringContainsString("context 'menu'", $warnings);
+		$this->assertSame(
+			[
+				"Mixed singular and plural calls for message id 'same' at {$file}:4",
+				"Conflicting plural forms for message id 'other' at {$file}:6",
+				"Mixed singular and plural calls for message id 'label' in context 'menu' at {$file}:8",
+			],
+			$result['warnings'],
+		);
+		$this->assertSame('many', $result['messages']['other']->plural);
 		$this->assertSame('button', $result['contexts']['button']['label']->context);
 	}
 }

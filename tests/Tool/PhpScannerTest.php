@@ -111,11 +111,12 @@ class PhpScannerTest extends TestCase
 			Dummy::__('static');
 			function __($x) { return $x; }
 			function __p($context, $x) { return $x; }
+			__('real');
 			PHP;
 
 		$scanner = new PhpScanner([$this->write('a.php', $code)]);
 
-		$this->assertSame([], $scanner->scan());
+		$this->assertSame(['real'], $this->ids($scanner->scan()));
 		$this->assertSame([], $scanner->warnings());
 	}
 
@@ -144,9 +145,9 @@ class PhpScannerTest extends TestCase
 
 	public function testIgnoresBareNameWithoutCall(): void
 	{
-		$scanner = new PhpScanner([$this->write('a.php', "<?php\n\$x = __ . 'tail';\n")]);
+		$scanner = new PhpScanner([$this->write('a.php', "<?php\n\$x = __ . 'tail';\n__('real');\n")]);
 
-		$this->assertSame([], $scanner->scan());
+		$this->assertSame(['real'], $this->ids($scanner->scan()));
 		$this->assertSame([], $scanner->warnings());
 	}
 
@@ -176,6 +177,48 @@ class PhpScannerTest extends TestCase
 		$scanner = new PhpScanner([$this->write('a.php', '<?php __ ')]);
 
 		$this->assertSame([], $scanner->scan());
+		$this->assertSame([], $scanner->warnings());
+	}
+
+	public function testRecordsFileAndLineOfEachCall(): void
+	{
+		$file = $this->write('a.php', "<?php\n\n__('A');\n");
+
+		$this->assertSame(["{$file}:3"], new PhpScanner([$file])->scan()[0]->locations);
+	}
+
+	public function testKeepsBackslashSequencesInSingleQuotedLiterals(): void
+	{
+		$scanner = new PhpScanner([$this->write('a.php', "<?php\n__('Line\\nBreak');\n")]);
+
+		$this->assertSame(['Line\\nBreak'], $this->ids($scanner->scan()));
+	}
+
+	public function testWarnsAboutTheArgumentThatIsNotLiteral(): void
+	{
+		$scanner = new PhpScanner([$this->write('a.php', "<?php\n__p(\$contexts['menu'], 'Open');\n")]);
+
+		$this->assertSame([], $scanner->scan());
+		$this->assertCount(1, $scanner->warnings());
+		$this->assertStringStartsWith('Non-literal context', $scanner->warnings()[0]);
+	}
+
+	public function testScansFileRootsInSortedOrderAndSkipsMissingRoots(): void
+	{
+		$z = $this->write('z.php', "<?php\n__('Z');\n");
+		$a = $this->write('a.php', "<?php\n__('A');\n");
+		$scanner = new PhpScanner([$this->tmpDir() . '/missing', $z, $a]);
+
+		$this->assertSame(['A', 'Z'], $this->ids($scanner->scan()));
+	}
+
+	public function testMatchesExtensionsCaseInsensitivelyAndSkipsBrokenLinks(): void
+	{
+		$this->write('src/UPPER.PHP', "<?php\n__('Upper');\n");
+		symlink($this->tmpDir() . '/nowhere.php', $this->tmpDir() . '/src/dead.php');
+		$scanner = new PhpScanner([$this->tmpDir() . '/src']);
+
+		$this->assertSame(['Upper'], $this->ids($scanner->scan()));
 		$this->assertSame([], $scanner->warnings());
 	}
 

@@ -132,7 +132,7 @@ class VerbaTest extends TestCase
 
 	public function testArgsWithSingleArrayIsNamed(): void
 	{
-		$this->assertSame(['name' => 'Bob'], Verba::args([['name' => 'Bob']]));
+		$this->assertSame(['name' => 'Bob', 'age' => 42], Verba::args([['name' => 'Bob', 'age' => 42]]));
 	}
 
 	public function testArgsWithSingleScalarIsPositional(): void

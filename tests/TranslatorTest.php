@@ -406,8 +406,49 @@ class TranslatorTest extends TestCase
 	public function testRejectsUnsafeLocaleId(): void
 	{
 		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage("Invalid locale id '../evil'");
 
 		new Translator('de', [], ['../evil']);
+	}
+
+	public function testRejectsLocaleIdWithTrailingPathCharacters(): void
+	{
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage("Invalid locale id 'de/../evil'");
+
+		new Translator('de/../evil', []);
+	}
+
+	public function testDomainAndLocaleNamesDoNotShareCatalogs(): void
+	{
+		// 'shop' + 'de' and 'shopd' + 'e' concatenate to the same string.
+		$dir = $this->tmpDir();
+		$this->write('shop.de.php', "<?php\nreturn ['messages' => ['a' => 'shop-de']];\n");
+		$this->write('shopd.e.php', "<?php\nreturn ['messages' => ['a' => 'shopd-e']];\n");
+		$t = new Translator('de', ['shop' => $dir, 'shopd' => $dir], ['e']);
+
+		$this->assertSame('shop-de', $t->translateDomain('shop', 'a'));
+		$this->assertSame('shopd-e', $t->translateDomain('shopd', 'a'));
+	}
+
+	public function testPluralPassesAllPositionalArgs(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame(
+			'3 of 4 items',
+			$t->translatePlural('%d of %d item', '%d of %d items', 3, [3, 4]),
+		);
+	}
+
+	public function testPluralPassesAllNamedArgs(): void
+	{
+		$t = new Translator('de', $this->cascade());
+
+		$this->assertSame(
+			'3 items in Cart',
+			$t->translatePlural(':count item in :place', ':count items in :place', 3, ['place' => 'Cart']),
+		);
 	}
 
 	public function testExportIgnoresFallbackLocales(): void
@@ -481,6 +522,15 @@ class TranslatorTest extends TestCase
 
 		$this->assertCount(1, $payload['domains']);
 		$this->assertSame(['x' => 'X-en'], $payload['domains'][0]['messages']);
+	}
+
+	public function testExportManyKeepsEmptyPrimaryEntry(): void
+	{
+		$t = new Translator('fr', ['fb' => $this->i18n()], ['en']);
+		$payload = $t->exportMany(['fb']);
+
+		$this->assertSame(['fr', 'en'], array_column($payload['domains'], 'plural'));
+		$this->assertSame([], $payload['domains'][0]['messages']);
 	}
 
 	public function testExportReturnsDomainCatalog(): void

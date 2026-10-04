@@ -109,7 +109,7 @@ class StatusCommandTest extends TestCase
 
 		[, $output] = $this->capture(new StatusCommand([$this->domain(['de'])]));
 
-		$this->assertStringContainsString('src/x.php', $output);
+		$this->assertStringContainsString("\n    {$this->tmpDir()}/src/x.php:2\n", $output);
 	}
 
 	public function testWhereNamesTheObsoleteIds(): void
@@ -140,6 +140,6 @@ class StatusCommandTest extends TestCase
 
 		[, , $error] = $this->capture(new StatusCommand([$this->domain(['de'])]));
 
-		$this->assertStringContainsString('Non-literal message id', $error);
+		$this->assertMatchesRegularExpression('/^(\e\[[0-9;]*m)?  Non-literal message id/m', $error);
 	}
 }

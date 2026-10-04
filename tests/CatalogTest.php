@@ -65,7 +65,7 @@ class CatalogTest extends TestCase
 	{
 		$file = $this->write(
 			'bad-contexts.php',
-			"<?php\nreturn ['contexts' => ['good' => ['A' => 'B'], 'bad' => 'x', 3 => []]];\n",
+			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B'], 3 => ['A' => 'C']]];\n",
 		);
 		$catalog = Catalog::load($file, 'de');
 
@@ -119,6 +119,19 @@ class CatalogTest extends TestCase
 				'messages' => ['k' => ['always-A', 'B', 'C']],
 			],
 			$catalog->export(),
+		);
+	}
+
+	public function testExportKeepsMessagesAfterUntranslatedOnes(): void
+	{
+		$file = $this->write(
+			'order.de.php',
+			"<?php\nreturn ['messages' => ['a' => null, 'b' => 'B'], 'contexts' => ['menu' => ['c' => [], 'd' => 'D']]];\n",
+		);
+
+		$this->assertSame(
+			['plural' => 'de', 'messages' => ['b' => 'B'], 'contexts' => ['menu' => ['d' => 'D']]],
+			Catalog::load($file, 'de')->export(),
 		);
 	}
 
