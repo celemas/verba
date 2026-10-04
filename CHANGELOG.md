@@ -2,7 +2,9 @@
 
 ## [Unreleased](https://codefloe.com/celema/verba/compare/0.5.0...HEAD)
 
-No notable changes since the last release.
+### Fixed
+
+- The JavaScript scanner decodes braced unicode escapes of control characters and noncharacters, such as `\u{1}`, `\u{FFFE}` and `\u{10FFFF}`, instead of dropping them. Lone surrogates and values above U+10FFFF still decode to nothing.
 
 ## [0.5.0](https://codefloe.com/celema/verba/src/tag/0.5.0) (2026-09-27)
 

@@ -84,11 +84,19 @@ final class JavascriptEscape
 
 	private static function codepoint(string $hex): string
 	{
-		// Braced escapes already hold a full codepoint; fixed-width escapes use JSON for surrogates.
-		$entity = '&#x' . $hex . ';';
-		$decoded = html_entity_decode($entity, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+		// Braced escapes hold a full codepoint (any number of leading zeros);
+		// fixed-width escapes use JSON for surrogates. Like JavaScript, keep
+		// controls and noncharacters; drop lone surrogates and values above
+		// U+10FFFF, which have no UTF-8 encoding.
+		$hex = ltrim($hex, '0');
 
-		return $decoded === $entity ? '' : $decoded;
+		if (strlen($hex) > 6) {
+			return '';
+		}
+
+		$char = mb_chr((int) hexdec($hex), 'UTF-8');
+
+		return $char === false ? '' : $char;
 	}
 
 	private static function highSurrogate(string $hex): bool

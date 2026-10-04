@@ -499,6 +499,16 @@ class JavascriptScannerTest extends TestCase
 		yield 'non-hex fixed escape' => ['"\\u00zz"', 'u00zz'];
 		yield 'short fixed escape' => ['"\\u12"', 'u12'];
 		yield 'unclosed long braced escape' => ['"\\u{4142434445"', 'u{4142434445'];
+		yield 'braced noncharacter' => ['"\\u{FFFE}"', "\u{FFFE}"];
+		yield 'braced noncharacter in Arabic block' => ['"\\u{FDD0}"', "\u{FDD0}"];
+		yield 'braced control character' => ['"a\\u{1}b"', "a\u{1}b"];
+		yield 'braced NUL' => ['"a\\u{0}b"', "a\0b"];
+		yield 'braced escape with leading zeros' => ['"\\u{0000000041}"', 'A'];
+		yield 'highest braced codepoint' => ['"\\u{10FFFF}"', "\u{10FFFF}"];
+		yield 'braced lone surrogate' => ['"a\\u{D800}b"', 'ab'];
+		yield 'braced escape above U+10FFFF' => ['"a\\u{110000}b"', 'ab'];
+		yield 'braced escape with too many digits' => ['"a\\u{1000000041}b"', 'ab'];
+		yield 'braced escape beyond the integer range' => ['"a\\u{FFFFFFFFFFFFFFFFFFFF}b"', 'ab'];
 	}
 
 	public function testSkipsRegexLiterals(): void
