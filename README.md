@@ -180,6 +180,16 @@ $commands->add(new StatusCommand([$domain]));
 - `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there and named in the output. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections, naming what it drops.
 - `i18n:status` — report per locale how many ids are missing, untranslated, translated, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps and the obsolete ids, telling those a sync already parked from those still in the live section.
 
+## Mutation testing
+
+Mutation testing with [Infection](https://infection.github.io/) is not part of `composer ci`, but the CI workflow runs it after the coverage step and enforces the minimum mutation score from `infection.json5.dist`. Pushes only mutate the changed lines; a weekly scheduled run covers the whole codebase. Run it locally with:
+
+```console
+composer mutation
+```
+
+Reports are written to `.infection/`.
+
 ## License
 
 This project is licensed under the [MIT license](LICENSE.md).
