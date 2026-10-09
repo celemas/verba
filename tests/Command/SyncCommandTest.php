@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tests\Command;
 
-use Celema\Console\Args;
+use Celema\Console\Buffer;
 use Celema\Console\Io;
+use Celema\Console\Runner;
 use Celema\Verba\Command\SyncCommand;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\CatalogFile;
@@ -43,13 +44,10 @@ class SyncCommandTest extends TestCase
 	/** @return array{string, string} */
 	private function capture(SyncCommand $command): array
 	{
-		$out = $this->tmpDir() . '/out.txt';
-		$err = $this->tmpDir() . '/err.txt';
-		file_put_contents($err, '');
-		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$command($args, new Io($out, $err));
+		$buffer = new Buffer();
+		new Runner([$command], new Io($buffer))->run();
 
-		return [(string) file_get_contents($out), (string) file_get_contents($err)];
+		return [$buffer->output(), $buffer->errorOutput()];
 	}
 
 	public function testReportsPerLocale(): void
@@ -120,8 +118,7 @@ class SyncCommandTest extends TestCase
 		$_SERVER['argv'] = ['run', 'i18n:sync'];
 		$this->write('src/x.php', "<?php\n__('A');\n");
 
-		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$exit = (new SyncCommand([$this->domain()]))($args, new Io($this->tmpDir() . '/o.txt'));
+		$exit = (new SyncCommand([$this->domain()]))(new Io(new Buffer()));
 
 		$this->assertSame(0, $exit);
 	}

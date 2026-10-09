@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Command;
 
-use Celema\Console\Args;
 use Celema\Console\Command;
 use Celema\Console\Io;
 use Celema\Console\Opt;
@@ -17,7 +16,6 @@ use Celema\Verba\Tool\Sync;
  * @api
  */
 #[Command('i18n:sync', 'Extract messages and reconcile catalog files')]
-#[Opt('--prune', 'Drop obsolete messages from the catalogs')]
 final class SyncCommand
 {
 	/**
@@ -27,31 +25,32 @@ final class SyncCommand
 		private readonly array $domains,
 	) {}
 
-	public function __invoke(Args $args, Io $io): int
-	{
-		$prune = $args->has('--prune');
-
+	public function __invoke(
+		Io $io,
+		#[Opt('Drop obsolete messages from the catalogs')]
+		bool $prune = false,
+	): int {
 		foreach ($this->domains as $domain) {
 			$report = new Sync($domain, $prune)->run();
-			$io->echoln("i18n: {$report->domain}");
+			$io->line('i18n: %s', $report->domain);
 
 			foreach ($report->locales as $locale => $stat) {
-				$io->echoln(sprintf(
+				$io->line(
 					'  %s  %d messages, %d added, %d obsolete%s',
 					$locale,
 					$stat['total'],
 					$stat['added'],
 					$stat['obsolete'],
 					$stat['changed'] ? '' : ' (unchanged)',
-				));
+				);
 
 				foreach ($stat['vanished'] as $id) {
-					$io->echoln('    ' . ($prune ? 'dropped' : 'parked') . ': ' . $id);
+					$io->line('    %s: %s', $prune ? 'dropped' : 'parked', $id);
 				}
 			}
 
 			foreach ($report->warnings as $warning) {
-				$io->warn('  ' . $warning);
+				$io->warn('  %s', $warning);
 			}
 		}
 

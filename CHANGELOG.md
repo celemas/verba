@@ -2,7 +2,13 @@
 
 ## [Unreleased](https://codefloe.com/celema/verba/compare/0.5.1...HEAD)
 
-No notable changes since the last release.
+### Breaking Changes
+
+- Requires the next `celema/console` release, in development as `dev-main`. `i18n:sync` and `i18n:status` declare `--prune`, `--strict`, and `--where` as typed `__invoke()` parameters, so a test or script calls them with named arguments: `$command(io: $io, prune: true)`.
+
+### Fixed
+
+- `i18n:sync` and `i18n:status` print message ids and source locations as plain text. Before, they were read as console markup, so an id containing a known tag printed styled or, if unbalanced, failed the command.
 
 ## [0.5.1](https://codefloe.com/celema/verba/src/tag/0.5.1) (2026-10-06)
 

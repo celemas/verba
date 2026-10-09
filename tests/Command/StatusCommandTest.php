@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tests\Command;
 
-use Celema\Console\Args;
+use Celema\Console\Buffer;
 use Celema\Console\Io;
+use Celema\Console\Runner;
 use Celema\Verba\Command\StatusCommand;
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\Domain;
@@ -47,13 +48,10 @@ class StatusCommandTest extends TestCase
 	 */
 	private function capture(StatusCommand $command): array
 	{
-		$out = $this->tmpDir() . '/out.txt';
-		$err = $this->tmpDir() . '/err.txt';
-		file_put_contents($err, '');
-		$args = new Args(array_slice($_SERVER['argv'] ?? [], offset: 2));
-		$exit = $command($args, new Io($out, $err));
+		$buffer = new Buffer();
+		$exit = new Runner([$command], new Io($buffer))->run();
 
-		return [$exit, (string) file_get_contents($out), (string) file_get_contents($err)];
+		return [$exit, $buffer->output(), $buffer->errorOutput()];
 	}
 
 	public function testReportsStatusWithoutStrict(): void
