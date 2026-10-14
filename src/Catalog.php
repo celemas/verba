@@ -58,6 +58,7 @@ final class Catalog
 			return [];
 		}
 
+		// Entries stay unchecked to keep request-time loading cheap; CatalogFile::load() validates them.
 		/** @var array<array-key, string|list<string>|null> $messages */
 		return $messages;
 	}

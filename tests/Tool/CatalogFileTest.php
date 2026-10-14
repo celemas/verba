@@ -6,6 +6,8 @@ namespace Celema\Verba\Tests\Tool;
 
 use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\CatalogFile;
+use PHPUnit\Framework\Attributes\DataProvider;
+use UnexpectedValueException;
 
 class CatalogFileTest extends TestCase
 {
@@ -52,12 +54,37 @@ class CatalogFileTest extends TestCase
 		$this->assertNull(CatalogFile::load($file)->plural);
 	}
 
+	#[DataProvider('provideMalformedEntries')]
+	public function testLoadRejectsMalformedEntries(string $catalog, string $entry): void
+	{
+		$file = $this->write('app.de.php', "<?php\nreturn {$catalog};\n");
+
+		$this->expectException(UnexpectedValueException::class);
+		$this->expectExceptionMessage("Invalid catalog entry {$entry} in '{$file}'");
+
+		CatalogFile::load($file);
+	}
+
+	/**
+	 * @return list<array{string, string}>
+	 */
+	public static function provideMalformedEntries(): array
+	{
+		return [
+			["['messages' => ['A' => 123]]", "messages['A']"],
+			["['obsolete' => ['A' => true]]", "obsolete['A']"],
+			["['contexts' => ['menu' => ['A' => ['eins', false]]]]", "contexts['menu']['A']"],
+			["['obsolete_contexts' => ['0' => ['A' => ['one' => 'eins']]]]", "obsolete_contexts['0']['A']"],
+		];
+	}
+
 	public function testRenderRoundTrips(): void
 	{
 		$messages = [
 			'b' => 'B',
 			'a' => null,
 			'plural id' => ['form0', 'form1'],
+			'untranslated plural' => [],
 			"quote's" => 'back\\slash',
 		];
 		$obsolete = ['gone' => 'weg'];

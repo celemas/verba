@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tool;
 
+use UnexpectedValueException;
+
 /**
  * Reads and renders a `<domain>.<locale>.php` catalog for the sync tooling,
  * exposing the raw message, context, and obsolete sections plus the optional
@@ -38,11 +40,11 @@ final class CatalogFile
 		}
 
 		return new self(
-			self::section($data['messages'] ?? null),
-			self::section($data['obsolete'] ?? null),
+			self::section($data['messages'] ?? null, $file, 'messages'),
+			self::section($data['obsolete'] ?? null, $file, 'obsolete'),
 			self::pluralKey($data['plural'] ?? null),
-			self::contexts($data['contexts'] ?? null),
-			self::contexts($data['obsolete_contexts'] ?? null),
+			self::contexts($data['contexts'] ?? null, $file, 'contexts'),
+			self::contexts($data['obsolete_contexts'] ?? null, $file, 'obsolete_contexts'),
 		);
 	}
 
@@ -154,20 +156,49 @@ final class CatalogFile
 	/**
 	 * @return array<array-key, string|list<string>|null>
 	 */
-	private static function section(mixed $value): array
+	private static function section(mixed $value, string $file, string $path): array
 	{
 		if (!is_array($value)) {
 			return [];
 		}
 
-		/** @var array<array-key, string|list<string>|null> $value */
-		return $value;
+		$section = [];
+
+		/** @var mixed $entry */
+		foreach ($value as $id => $entry) {
+			if (!self::isEntry($entry)) {
+				throw new UnexpectedValueException(
+					"Invalid catalog entry {$path}['{$id}'] in '{$file}': "
+						. 'expected a string, a list of strings, or null',
+				);
+			}
+
+			$section[$id] = $entry;
+		}
+
+		return $section;
+	}
+
+	/**
+	 * @psalm-assert-if-true string|list<string>|null $entry
+	 */
+	private static function isEntry(mixed $entry): bool
+	{
+		if ($entry === null || is_string($entry)) {
+			return true;
+		}
+
+		return (
+			is_array($entry)
+				&& array_is_list($entry)
+				&& array_all($entry, static fn(mixed $form): bool => is_string($form))
+		);
 	}
 
 	/**
 	 * @return array<array-key, array<array-key, string|list<string>|null>>
 	 */
-	private static function contexts(mixed $value): array
+	private static function contexts(mixed $value, string $file, string $name): array
 	{
 		if (!is_array($value)) {
 			return [];
@@ -180,7 +211,7 @@ final class CatalogFile
 				continue;
 			}
 
-			$contexts[$context] = self::section($messages);
+			$contexts[$context] = self::section($messages, $file, "{$name}['{$context}']");
 		}
 
 		return $contexts;

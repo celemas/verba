@@ -100,6 +100,8 @@ Every message map uses the same value types:
 | `null`         | Known but untranslated                    |
 | `[]`           | An untranslated plural entry              |
 
+`i18n:sync` and `i18n:status` reject a catalog containing any other value and name its file and entry. The runtime trusts catalogs and does not check their values when loading them.
+
 Plural calls are keyed by their singular source ID:
 
 ```php

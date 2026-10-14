@@ -9,6 +9,7 @@
 ### Changed
 
 - The PHPDoc of catalog maps in `Catalog`, `CatalogFile`, `Extractor::extract()`, `Translator::export()`, and `Translator::exportMany()` types message IDs and contexts as `array-key` instead of `string`, because PHP stores numeric IDs such as `'404'` as integer keys. Static analysis may now flag consumer code that passes these keys to `string` parameters.
+- `i18n:sync` and `i18n:status` reject a catalog entry that is not a string, a list of strings, or `null`, naming the catalog file and entry. Before, `i18n:sync` failed with a `TypeError` or rewrote a keyed plural array as a list, and `i18n:status` counted the entry as translated. The runtime still loads catalogs without checking their values.
 
 ### Fixed
 

@@ -10,6 +10,7 @@ use Celema\Verba\Tool\Domain;
 use Celema\Verba\Tool\PhpScanner;
 use Celema\Verba\Tool\Sync;
 use RuntimeException;
+use UnexpectedValueException;
 
 class SyncTest extends TestCase
 {
@@ -132,6 +133,22 @@ class SyncTest extends TestCase
 		$this->assertSame(['1' => ['Gone' => 'Weg']], $catalog->obsoleteContexts);
 		$this->assertSame(['7', '[1] Gone'], $report->locales['de']['vanished']);
 		$this->assertFalse(new Sync($this->domain())->run()->locales['de']['changed']);
+	}
+
+	public function testRejectsMalformedCatalogWithoutRewritingIt(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$source = "<?php\nreturn ['messages' => ['A' => 123]];\n";
+		$file = $this->write('i18n/app.de.php', $source);
+
+		try {
+			new Sync($this->domain())->run();
+			$this->fail('Sync accepted a malformed catalog');
+		} catch (UnexpectedValueException $e) {
+			$this->assertStringContainsString("messages['A']", $e->getMessage());
+		}
+
+		$this->assertSame($source, file_get_contents($file));
 	}
 
 	public function testHandlesSeveralContextsAtOnce(): void
