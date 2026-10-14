@@ -282,11 +282,7 @@ final class Translator
 	private function domainExports(string $domain): array
 	{
 		$exports = [];
-
-		/** @var array<string, bool> $placed */
 		$placed = [];
-
-		/** @var array<string, array<string, bool>> $placedContexts */
 		$placedContexts = [];
 
 		foreach ($this->locales as $i => $locale) {
