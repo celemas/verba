@@ -60,7 +60,9 @@ class CatalogFileTest extends TestCase
 		$file = $this->write('app.de.php', "<?php\nreturn {$catalog};\n");
 
 		$this->expectException(UnexpectedValueException::class);
-		$this->expectExceptionMessage("Invalid catalog entry {$entry} in '{$file}'");
+		$this->expectExceptionMessage(
+			"Invalid catalog entry {$entry} in '{$file}': expected a string, a list of strings, or null",
+		);
 
 		CatalogFile::load($file);
 	}
