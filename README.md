@@ -35,7 +35,7 @@ __dp('shop', 'button', 'Open');                  // domain + context
 __dnp('shop', 'inventory', 'one item', '%d items', $count);
 ```
 
-Arguments interpolate in one of two styles. A single array argument fills named `:placeholder` tokens; anything else is passed to `sprintf`:
+Arguments interpolate in one of two styles. A single array argument fills named `:placeholder` tokens; anything else is passed to `sprintf`. An array among several arguments throws an `InvalidArgumentException`:
 
 ```php
 __('Hello :name', ['name' => $user->name]);

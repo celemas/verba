@@ -4,6 +4,7 @@
 
 ### Breaking Changes
 
+- The translation functions throw an `InvalidArgumentException` when an array argument is not the only argument, as in `__('%s %s', ['name' => 'Bob'], 'x')`. Before, `sprintf` received the array, warned, and printed `Array`.
 - Requires `celema/console` 0.6. `i18n:sync` and `i18n:status` declare `--prune`, `--strict`, and `--where` as typed `__invoke()` parameters, so a test or script calls them with named arguments: `$command(io: $io, prune: true)`.
 
 ### Changed

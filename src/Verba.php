@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Celema\Verba;
 
+use InvalidArgumentException;
+
 /**
  * Process-wide holder and facade for the active translator.
  *
@@ -122,7 +124,7 @@ final class Verba
 	/**
 	 * Normalizes variadic message arguments into a single args array. A lone
 	 * array argument is a named-placeholder map; anything else is a positional
-	 * (sprintf) list.
+	 * (sprintf) list of scalars, so an array among several arguments is rejected.
 	 *
 	 * @param array<array-key, string|int|float|array<array-key, string|int|float>> $args
 	 * @return array<array-key, string|int|float>
@@ -137,8 +139,17 @@ final class Verba
 			}
 		}
 
-		/** @var array<array-key, string|int|float> $args */
-		return $args;
+		$positional = [];
+
+		foreach ($args as $key => $arg) {
+			if (is_array($arg)) {
+				throw new InvalidArgumentException('A named-placeholder array must be the only message argument');
+			}
+
+			$positional[$key] = $arg;
+		}
+
+		return $positional;
 	}
 
 	private static function current(): Translator

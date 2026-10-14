@@ -6,6 +6,7 @@ namespace Celema\Verba\Tests;
 
 use Celema\Verba\Translator;
 use Celema\Verba\Verba;
+use InvalidArgumentException;
 
 class FunctionsTest extends TestCase
 {
@@ -27,6 +28,13 @@ class FunctionsTest extends TestCase
 	public function testTranslatePositional(): void
 	{
 		$this->assertSame('5 items', __('%s items', '5'));
+	}
+
+	public function testRejectsSeveralNamedPlaceholderArrays(): void
+	{
+		$this->expectException(InvalidArgumentException::class);
+
+		__('%s %s', ['name' => 'Bob'], ['age' => 42]);
 	}
 
 	public function testTranslatePlainNoArgs(): void

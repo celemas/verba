@@ -6,6 +6,7 @@ namespace Celema\Verba\Tests;
 
 use Celema\Verba\Translator;
 use Celema\Verba\Verba;
+use InvalidArgumentException;
 
 class VerbaTest extends TestCase
 {
@@ -143,6 +144,14 @@ class VerbaTest extends TestCase
 	public function testArgsWithMultipleScalarsIsPositional(): void
 	{
 		$this->assertSame(['a', 'b'], Verba::args(['a', 'b']));
+	}
+
+	public function testArgsRejectsArrayAmongSeveralArguments(): void
+	{
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage('A named-placeholder array must be the only message argument');
+
+		Verba::args(['x', ['name' => 'Bob']]);
 	}
 
 	public function testArgsWithNoneIsEmpty(): void
