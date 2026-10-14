@@ -37,8 +37,8 @@ final class Sync
 	}
 
 	/**
-	 * @param array<string, Message> $fresh
-	 * @param array<string, array<string, Message>> $freshContexts
+	 * @param array<array-key, Message> $fresh
+	 * @param array<array-key, array<array-key, Message>> $freshContexts
 	 * @return array{added: int, obsolete: int, total: int, changed: bool, vanished: list<string>}
 	 */
 	private function reconcile(string $locale, array $fresh, array $freshContexts): array
@@ -101,11 +101,11 @@ final class Sync
 	 * The ids of a live section that the source no longer holds, which this
 	 * run parks or, when pruning, drops. A contextual id reads `[context] id`.
 	 *
-	 * @param array<string, string|list<string>|null> $messages
-	 * @param array<string, Message> $fresh
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param array<array-key, Message> $fresh
 	 * @return list<string>
 	 */
-	private static function vanished(array $messages, array $fresh, ?string $context = null): array
+	private static function vanished(array $messages, array $fresh, int|string|null $context = null): array
 	{
 		$ids = [];
 
@@ -114,17 +114,17 @@ final class Sync
 				continue;
 			}
 
-			$ids[] = $context === null ? $id : "[{$context}] {$id}";
+			$ids[] = $context === null ? (string) $id : "[{$context}] {$id}";
 		}
 
 		return $ids;
 	}
 
 	/**
-	 * @param array<string, Message> $fresh
-	 * @param array<string, string|list<string>|null> $messages
-	 * @param array<string, string|list<string>|null> $obsolete
-	 * @return array{messages: array<string, string|list<string>|null>, added: int}
+	 * @param array<array-key, Message> $fresh
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param array<array-key, string|list<string>|null> $obsolete
+	 * @return array{messages: array<array-key, string|list<string>|null>, added: int}
 	 */
 	private function reconcileSection(array $fresh, array $messages, array $obsolete): array
 	{
@@ -146,10 +146,10 @@ final class Sync
 	}
 
 	/**
-	 * @param array<string, string|list<string>|null> $messages
-	 * @param array<string, string|list<string>|null> $parked
-	 * @param array<string, Message> $fresh
-	 * @return array<string, string|list<string>|null>
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param array<array-key, string|list<string>|null> $parked
+	 * @param array<array-key, Message> $fresh
+	 * @return array<array-key, string|list<string>|null>
 	 */
 	private static function parkSection(array $messages, array $parked, array $fresh): array
 	{
@@ -175,8 +175,8 @@ final class Sync
 	}
 
 	/**
-	 * @param array<string, array<string, Message>> $fresh
-	 * @return array<string, array<string, string|list<string>|null>>
+	 * @param array<array-key, array<array-key, Message>> $fresh
+	 * @return array<array-key, array<array-key, string|list<string>|null>>
 	 */
 	private function parkContexts(CatalogFile $catalog, array $fresh): array
 	{
@@ -201,7 +201,7 @@ final class Sync
 		return $contexts;
 	}
 
-	/** @param array<string, array<string, string|list<string>|null>> $contexts */
+	/** @param array<array-key, array<array-key, string|list<string>|null>> $contexts */
 	private static function contextSize(array $contexts): int
 	{
 		return array_sum(array_map(count(...), $contexts));

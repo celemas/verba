@@ -114,6 +114,26 @@ class SyncTest extends TestCase
 		$this->assertSame(['[menu] Gone'], $report->locales['de']['vanished']);
 	}
 
+	public function testSyncsNumericIdsAndContexts(): void
+	{
+		$this->write('src/x.php', "<?php\n__('404');\n__('0');\n__p('0', 'Open');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => ['404' => 'Nicht gefunden', '7' => 'Sieben'], "
+				. "'contexts' => ['0' => ['Open' => 'Offen'], '1' => ['Gone' => 'Weg']]];\n",
+		);
+
+		$report = new Sync($this->domain())->run();
+		$catalog = $this->catalog();
+
+		$this->assertSame(['0' => null, '404' => 'Nicht gefunden'], $catalog->messages);
+		$this->assertSame(['7' => 'Sieben'], $catalog->obsolete);
+		$this->assertSame(['0' => ['Open' => 'Offen']], $catalog->contexts);
+		$this->assertSame(['1' => ['Gone' => 'Weg']], $catalog->obsoleteContexts);
+		$this->assertSame(['7', '[1] Gone'], $report->locales['de']['vanished']);
+		$this->assertFalse(new Sync($this->domain())->run()->locales['de']['changed']);
+	}
+
 	public function testHandlesSeveralContextsAtOnce(): void
 	{
 		$this->write('src/x.php', "<?php\n__p('menu', 'Open');\n__p('state', 'Open');\n__p('kept', 'Here');\n");

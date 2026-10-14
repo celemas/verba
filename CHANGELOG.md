@@ -6,8 +6,13 @@
 
 - Requires `celema/console` 0.6. `i18n:sync` and `i18n:status` declare `--prune`, `--strict`, and `--where` as typed `__invoke()` parameters, so a test or script calls them with named arguments: `$command(io: $io, prune: true)`.
 
+### Changed
+
+- The PHPDoc of catalog maps in `Catalog`, `CatalogFile`, `Extractor::extract()`, `Translator::export()`, and `Translator::exportMany()` types message IDs and contexts as `array-key` instead of `string`, because PHP stores numeric IDs such as `'404'` as integer keys. Static analysis may now flag consumer code that passes these keys to `string` parameters.
+
 ### Fixed
 
+- Numeric message IDs and contexts, such as `'404'` or `'0'`, work throughout. `i18n:sync` writes them instead of failing with a `TypeError`. The runtime, `i18n:sync`, and `i18n:status` load numeric contexts instead of dropping them. The JavaScript runtime reads an exported map whose IDs are exactly `0` to `n-1`, which PHP encodes as a JSON array, instead of treating it as empty.
 - `i18n:sync` and `i18n:status` print message ids and source locations as plain text. Before, they were read as console markup, so an id containing a known tag printed styled or, if unbalanced, failed the command.
 
 ## [0.5.1](https://codefloe.com/celema/verba/src/tag/0.5.1) (2026-10-06)

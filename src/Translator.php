@@ -217,8 +217,8 @@ final class Translator
 	 *
 	 * @return array{
 	 *     plural: string,
-	 *     messages: array<string, string|list<string>>,
-	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 *     messages: array<array-key, string|list<string>>,
+	 *     contexts?: array<array-key, array<array-key, string|list<string>>>,
 	 * }
 	 */
 	public function export(string $domain): array
@@ -244,8 +244,8 @@ final class Translator
 	 *     domains: list<array{
 	 *         domain: string,
 	 *         plural: string,
-	 *         messages: array<string, string|list<string>>,
-	 *         contexts?: array<string, array<string, string|list<string>>>,
+	 *         messages: array<array-key, string|list<string>>,
+	 *         contexts?: array<array-key, array<array-key, string|list<string>>>,
 	 *     }>,
 	 * }
 	 */
@@ -275,8 +275,8 @@ final class Translator
 	 * @return list<array{
 	 *     domain: string,
 	 *     plural: string,
-	 *     messages: array<string, string|list<string>>,
-	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 *     messages: array<array-key, string|list<string>>,
+	 *     contexts?: array<array-key, array<array-key, string|list<string>>>,
 	 * }>
 	 */
 	private function domainExports(string $domain): array
@@ -318,11 +318,11 @@ final class Translator
 	}
 
 	/**
-	 * @param array<string, string|list<string>> $messages
-	 * @param array<string, bool> $placed True for a string, false for a form list.
+	 * @param array<array-key, string|list<string>> $messages
+	 * @param array<array-key, bool> $placed True for a string, false for a form list.
 	 * @return array{
-	 *     messages: array<string, string|list<string>>,
-	 *     placed: array<string, bool>,
+	 *     messages: array<array-key, string|list<string>>,
+	 *     placed: array<array-key, bool>,
 	 * }
 	 */
 	private static function place(array $messages, array $placed): array

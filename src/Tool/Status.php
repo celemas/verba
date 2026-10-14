@@ -33,8 +33,8 @@ final class Status
 	}
 
 	/**
-	 * @param array<string, Message> $fresh
-	 * @param array<string, array<string, Message>> $freshContexts
+	 * @param array<array-key, Message> $fresh
+	 * @param array<array-key, array<array-key, Message>> $freshContexts
 	 * @return array{
 	 *     missing: int,
 	 *     untranslated: int,
@@ -89,8 +89,8 @@ final class Status
 	}
 
 	/**
-	 * @param array<string, Message> $fresh
-	 * @param array<string, string|list<string>|null> $messages
+	 * @param array<array-key, Message> $fresh
+	 * @param array<array-key, string|list<string>|null> $messages
 	 * @return array{
 	 *     missing: int,
 	 *     untranslated: int,
@@ -149,16 +149,16 @@ final class Status
 	 * because no sync ran since they vanished. A contextual id reads
 	 * `[context] id`.
 	 *
-	 * @param array<string, string|list<string>|null> $messages
-	 * @param array<string, string|list<string>|null> $parked
-	 * @param array<string, Message> $fresh
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param array<array-key, string|list<string>|null> $parked
+	 * @param array<array-key, Message> $fresh
 	 * @return array{parked: list<string>, vanished: list<string>}
 	 */
 	private static function stale(
 		array $messages,
 		array $parked,
 		array $fresh,
-		?string $context = null,
+		int|string|null $context = null,
 	): array {
 		// A numeric id arrives as an integer key.
 		$label = static fn(int|string $id): string => $context === null ? (string) $id : "[{$context}] {$id}";

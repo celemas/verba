@@ -104,6 +104,24 @@ class StatusTest extends TestCase
 		$this->assertSame(['Gone', '42', '[old] V1', '[old] V2'], $de['vanished']);
 	}
 
+	public function testReportsNumericContexts(): void
+	{
+		$this->write('src/x.php', "<?php\n__p('0', 'Open');\n__p('0', 'Save');\n");
+		$this->write(
+			'i18n/app.de.php',
+			"<?php\nreturn ['messages' => [], "
+				. "'contexts' => ['0' => ['Open' => 'Offen'], '1' => ['Gone' => 'Weg']], "
+				. "'obsolete_contexts' => ['2' => ['Old' => 'Alt']]];\n",
+		);
+
+		$de = new Status($this->domain(['de']))->run()->locales['de'];
+
+		$this->assertSame(1, $de['translated']);
+		$this->assertSame(1, $de['missing']);
+		$this->assertSame(['[1] Gone'], $de['vanished']);
+		$this->assertSame(['[2] Old'], $de['parked']);
+	}
+
 	public function testCleanWhenFullyTranslated(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");

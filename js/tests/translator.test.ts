@@ -85,6 +85,19 @@ describe('Translator', () => {
 		expect(t.translateContext('menu', 'Open')).toBe('Open');
 	});
 
+	it('reads numeric-id maps that PHP encodes as JSON lists', () => {
+		const t = new Translator(
+			JSON.parse(
+				'{"domains":[{"domain":"x","messages":["Null","Eins"],"contexts":[{"Open":"Offen"}]}]}',
+			),
+		);
+
+		expect(t.translate('0')).toBe('Null');
+		expect(t.translate('1')).toBe('Eins');
+		expect(t.translateContext('0', 'Open')).toBe('Offen');
+		expect(t.translateContext('1', 'Open')).toBe('Open');
+	});
+
 	it('pins a domain', () => {
 		const t = new Translator(cascade);
 

@@ -87,6 +87,28 @@ class CatalogFileTest extends TestCase
 		$this->assertSame('ru', $reloaded->plural);
 	}
 
+	public function testRenderRoundTripsNumericIdsAndContexts(): void
+	{
+		$messages = ['0' => 'Null', '404' => 'Nicht gefunden', 'a' => 'A'];
+		$obsolete = ['7' => 'Sieben'];
+		$contexts = ['0' => ['1' => 'Eins'], 'menu' => ['2' => 'Zwei']];
+		$obsoleteContexts = ['3' => ['Old' => 'Alt']];
+		$rendered = new CatalogFile(
+			$messages,
+			$obsolete,
+			null,
+			$contexts,
+			$obsoleteContexts,
+		)->render();
+
+		$reloaded = CatalogFile::load($this->write('out.php', $rendered));
+
+		$this->assertSame($messages, $reloaded->messages);
+		$this->assertSame($obsolete, $reloaded->obsolete);
+		$this->assertSame($contexts, $reloaded->contexts);
+		$this->assertSame($obsoleteContexts, $reloaded->obsoleteContexts);
+	}
+
 	public function testRenderLayout(): void
 	{
 		$rendered = new CatalogFile(
@@ -147,7 +169,7 @@ class CatalogFileTest extends TestCase
 	{
 		$file = $this->write(
 			'app.de.php',
-			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B'], 3 => []], "
+			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B']], "
 				. "'obsolete_contexts' => 'bad'];\n",
 		);
 		$catalog = CatalogFile::load($file);

@@ -15,10 +15,10 @@ namespace Celema\Verba\Tool;
 final class CatalogFile
 {
 	/**
-	 * @param array<string, string|list<string>|null> $messages
-	 * @param array<string, string|list<string>|null> $obsolete
-	 * @param array<string, array<string, string|list<string>|null>> $contexts
-	 * @param array<string, array<string, string|list<string>|null>> $obsoleteContexts
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param array<array-key, string|list<string>|null> $obsolete
+	 * @param array<array-key, array<array-key, string|list<string>|null>> $contexts
+	 * @param array<array-key, array<array-key, string|list<string>|null>> $obsoleteContexts
 	 */
 	public function __construct(
 		public array $messages,
@@ -86,7 +86,7 @@ final class CatalogFile
 	}
 
 	/**
-	 * @param array<string, string|list<string>|null> $section
+	 * @param array<array-key, string|list<string>|null> $section
 	 * @return list<string>
 	 */
 	private function rows(array $section, int $depth = 2): array
@@ -96,7 +96,7 @@ final class CatalogFile
 		$rows = [];
 
 		foreach ($section as $id => $value) {
-			$rows[] = $indent . $this->quote($id) . ' => ' . $this->value($value) . ',';
+			$rows[] = $indent . $this->quote((string) $id) . ' => ' . $this->value($value) . ',';
 		}
 
 		return $rows;
@@ -104,7 +104,7 @@ final class CatalogFile
 
 	/**
 	 * @param list<string> $lines
-	 * @param array<string, array<string, string|list<string>|null>> $contexts
+	 * @param array<array-key, array<array-key, string|list<string>|null>> $contexts
 	 */
 	private function appendContexts(array &$lines, string $name, array $contexts): void
 	{
@@ -118,7 +118,7 @@ final class CatalogFile
 		$lines[] = "\t'{$name}' => [";
 
 		foreach ($contexts as $context => $messages) {
-			$lines[] = "\t\t" . $this->quote($context) . ' => [';
+			$lines[] = "\t\t" . $this->quote((string) $context) . ' => [';
 
 			foreach ($this->rows($messages, 3) as $row) {
 				$lines[] = $row;
@@ -152,7 +152,7 @@ final class CatalogFile
 	}
 
 	/**
-	 * @return array<string, string|list<string>|null>
+	 * @return array<array-key, string|list<string>|null>
 	 */
 	private static function section(mixed $value): array
 	{
@@ -160,12 +160,12 @@ final class CatalogFile
 			return [];
 		}
 
-		/** @var array<string, string|list<string>|null> $value */
+		/** @var array<array-key, string|list<string>|null> $value */
 		return $value;
 	}
 
 	/**
-	 * @return array<string, array<string, string|list<string>|null>>
+	 * @return array<array-key, array<array-key, string|list<string>|null>>
 	 */
 	private static function contexts(mixed $value): array
 	{
@@ -176,7 +176,7 @@ final class CatalogFile
 		$contexts = [];
 
 		foreach ($value as $context => $messages) {
-			if (!is_string($context) || !is_array($messages)) {
+			if (!is_array($messages)) {
 				continue;
 			}
 

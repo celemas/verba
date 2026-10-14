@@ -122,6 +122,10 @@ The plural source ID is used only as the untranslated fallback. It is not a seco
 
 A string is also valid for a plural lookup and is returned for every count. When a plural list has fewer forms than its rule requests, Verba uses its final form. `null` and an empty list continue through locale and domain fallback.
 
+## Numeric IDs and contexts
+
+PHP stores numeric-string array keys such as `'404'` or `'0'` as integers. Verba reads such keys as the corresponding message IDs and contexts, so lookups, synchronization, and export handle them like any other key. Code that iterates catalog maps itself, such as a consumer of `Catalog::export()` or `CatalogFile`, receives these keys as integers and must convert them where it needs strings.
+
 ## Why ordinary and contextual messages are split
 
 The split is a Verba serialization choice, not the representation used by gettext PO files.
@@ -209,3 +213,5 @@ The writer rewrites the complete file deterministically. Do not rely on manually
 - optional `contexts`
 
 They omit `null`, empty plural lists, and both obsolete sections. `Translator::exportMany()` also removes fallback entries that can no longer be reached, tracking ordinary IDs and each `(context, ID)` pair independently. A locale-specific payload entry is removed only when both its ordinary and contextual maps are empty.
+
+`json_encode()` turns a map whose keys are exactly `0` to `n-1` into a JSON array. This includes an empty map. The JavaScript runtime reads such arrays as maps.

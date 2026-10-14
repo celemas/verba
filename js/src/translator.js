@@ -244,13 +244,14 @@ export class Translator {
 }
 
 /**
- * PHP encodes an empty message map as a JSON array, so lists read as empty.
+ * PHP encodes a map keyed exactly 0..n-1, such as an empty map or numeric ids
+ * like '0', as a JSON array; copying it restores the keys.
  *
  * @param {Messages | undefined} messages
  * @returns {Messages}
  */
 function readMessages(messages) {
-	return messages === undefined || Array.isArray(messages) ? {} : messages;
+	return Array.isArray(messages) ? { ...messages } : (messages ?? {});
 }
 
 /**
@@ -258,12 +259,8 @@ function readMessages(messages) {
  * @returns {Contexts}
  */
 function readContexts(contexts) {
-	if (contexts === undefined || Array.isArray(contexts)) {
-		return {};
-	}
-
 	return Object.fromEntries(
-		Object.entries(contexts).map(([context, messages]) => [context, readMessages(messages)]),
+		Object.entries(contexts ?? {}).map(([context, messages]) => [context, readMessages(messages)]),
 	);
 }
 

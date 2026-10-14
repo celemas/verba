@@ -19,8 +19,8 @@ final class Extractor
 
 	/**
 	 * @return array{
-	 *     messages: array<string, Message>,
-	 *     contexts: array<string, array<string, Message>>,
+	 *     messages: array<array-key, Message>,
+	 *     contexts: array<array-key, array<array-key, Message>>,
 	 *     warnings: list<string>,
 	 * }
 	 */

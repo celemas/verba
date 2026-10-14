@@ -65,13 +65,26 @@ class CatalogTest extends TestCase
 	{
 		$file = $this->write(
 			'bad-contexts.php',
-			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B'], 3 => ['A' => 'C']]];\n",
+			"<?php\nreturn ['contexts' => ['bad' => 'x', 'good' => ['A' => 'B']]];\n",
 		);
 		$catalog = Catalog::load($file, 'de');
 
 		$this->assertSame('B', $catalog->get('A', 'good'));
 		$this->assertNull($catalog->get('A', 'bad'));
-		$this->assertNull($catalog->get('A', '3'));
+	}
+
+	public function testLoadsNumericIdsAndContexts(): void
+	{
+		$file = $this->write(
+			'numeric.php',
+			"<?php\nreturn ['messages' => ['404' => 'Nicht gefunden'], "
+				. "'contexts' => ['0' => ['Open' => 'Offen'], '3' => ['7' => 'Sieben']]];\n",
+		);
+		$catalog = Catalog::load($file, 'de');
+
+		$this->assertSame('Nicht gefunden', $catalog->get('404'));
+		$this->assertSame('Offen', $catalog->get('Open', '0'));
+		$this->assertSame('Sieben', $catalog->get('7', '3'));
 	}
 
 	public function testCatalogPluralOverrideWins(): void

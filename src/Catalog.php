@@ -17,9 +17,9 @@ final class Catalog
 	private readonly Closure $plural;
 
 	/**
-	 * @param array<string, string|list<string>|null> $messages
+	 * @param array<array-key, string|list<string>|null> $messages
 	 * @param string $pluralKey A locale or rule id resolved through {@see Plurals}.
-	 * @param array<string, array<string, string|list<string>|null>> $contexts
+	 * @param array<array-key, array<array-key, string|list<string>|null>> $contexts
 	 */
 	public function __construct(
 		private readonly array $messages,
@@ -50,7 +50,7 @@ final class Catalog
 	}
 
 	/**
-	 * @return array<string, string|list<string>|null>
+	 * @return array<array-key, string|list<string>|null>
 	 */
 	private static function readMessages(mixed $messages): array
 	{
@@ -58,12 +58,12 @@ final class Catalog
 			return [];
 		}
 
-		/** @var array<string, string|list<string>|null> $messages */
+		/** @var array<array-key, string|list<string>|null> $messages */
 		return $messages;
 	}
 
 	/**
-	 * @return array<string, array<string, string|list<string>|null>>
+	 * @return array<array-key, array<array-key, string|list<string>|null>>
 	 */
 	private static function readContexts(mixed $contexts): array
 	{
@@ -74,7 +74,7 @@ final class Catalog
 		$read = [];
 
 		foreach ($contexts as $context => $messages) {
-			if (!is_string($context) || !is_array($messages)) {
+			if (!is_array($messages)) {
 				continue;
 			}
 
@@ -122,8 +122,8 @@ final class Catalog
 	 *
 	 * @return array{
 	 *     plural: string,
-	 *     messages: array<string, string|list<string>>,
-	 *     contexts?: array<string, array<string, string|list<string>>>,
+	 *     messages: array<array-key, string|list<string>>,
+	 *     contexts?: array<array-key, array<array-key, string|list<string>>>,
 	 * }
 	 */
 	public function export(): array
@@ -150,8 +150,8 @@ final class Catalog
 	}
 
 	/**
-	 * @param array<string, string|list<string>|null> $messages
-	 * @return array<string, string|list<string>>
+	 * @param array<array-key, string|list<string>|null> $messages
+	 * @return array<array-key, string|list<string>>
 	 */
 	private static function translated(array $messages): array
 	{
