@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- Requires the next `celema/console` release, in development as `dev-main`. `i18n:sync` and `i18n:status` declare `--prune`, `--strict`, and `--where` as typed `__invoke()` parameters, so a test or script calls them with named arguments: `$command(io: $io, prune: true)`.
+- Requires `celema/console` 0.6. `i18n:sync` and `i18n:status` declare `--prune`, `--strict`, and `--where` as typed `__invoke()` parameters, so a test or script calls them with named arguments: `$command(io: $io, prune: true)`.
 
 ### Fixed
 
