@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased](https://codefloe.com/celema/verba/compare/0.6.0...HEAD)
+## [Unreleased](https://codefloe.com/celema/verba/compare/0.6.1...HEAD)
+
+No notable changes since the last release.
+
+## [0.6.1](https://codefloe.com/celema/verba/src/tag/0.6.1) (2026-10-16)
 
 ### Changed
 
