@@ -2,7 +2,9 @@
 
 ## [Unreleased](https://codefloe.com/celema/verba/compare/0.6.0...HEAD)
 
-No notable changes since the last release.
+### Changed
+
+- Requires `celema/console` 0.7.
 
 ## [0.6.0](https://codefloe.com/celema/verba/src/tag/0.6.0) (2026-10-14)
 
