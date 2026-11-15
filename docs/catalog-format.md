@@ -48,6 +48,36 @@ Catalog files are executable PHP. Treat them as trusted, author-controlled code 
 
 ## Top-level sections
 
+### `extends`
+
+The optional `extends` string names one parent locale in the **same domain and directory**. Omit it or use `null` for no parent. It is a locale ID, not a filename or path; ASCII letters, digits, hyphens, and underscores are allowed.
+
+```php
+// app.en_US.php
+return [
+    'extends' => 'en_GB',
+    'messages' => [
+        'Choose a colour' => 'Choose a color',
+    ],
+];
+```
+
+This catalog inherits from `app.en_GB.php`, which may itself extend another locale. Different domains may choose different parents for the same locale. There is no implicit parent based on the locale's spelling and no multiple inheritance.
+
+Within each domain, `Translator` resolves:
+
+1. The requested locale and its parent chain.
+2. Each configured fallback locale and its parent chain, in order.
+3. Only then, the next domain in the cascade.
+
+If all domains miss, the original message ID is returned. A pinned-domain lookup searches only that domain.
+
+Missing entries, `null`, and empty plural lists fall through. An empty string is a translation and overrides the parent. Contexts are matched exactly. Plural lists are inherited as whole messages, never merged form by form; the supplying catalog's plural rule applies. Singular lookups skip plural lists, as they do with runtime fallbacks.
+
+Both runtime and tooling reject invalid parent IDs, missing parent files, and inheritance cycles with `UnexpectedValueException`. Runtime validation occurs when the domain's resolution chain is first used, including during `exportMany()`. A missing primary or runtime fallback catalog still behaves as an empty catalog; an explicitly declared parent must exist.
+
+`Catalog::load()` reads one file and exposes its `extends` property; it does not resolve parents itself. `CatalogFile::load()` likewise reads a single file for editing. `Translator` and the sync/status tooling resolve the chains.
+
 ### `plural`
 
 The optional `plural` string selects a built-in plural rule. It may be a locale such as `de` or another supported rule identifier. Without it, Verba derives the rule from the catalog locale in the filename.
@@ -204,16 +234,24 @@ All messages could live under one context map using a reserved key such as `defa
 5. Sorts context names and message IDs with bytewise string ordering.
 6. Omits empty `contexts`, `obsolete`, and `obsolete_contexts` sections.
 
+For catalogs with `extends`, sync preserves the declaration and keeps the variant sparse. A source message translated by an ancestor needs no local placeholder; existing `null` and empty-list placeholders covered by ancestors are removed. Uncovered messages still receive placeholders. Explicit local translations remain, even when identical to a parent, and returning obsolete translations are restored before considering inheritance. Obsolete parent entries do not count as translations.
+
+Sync validates every configured locale's chain before writing files, then processes configured parents before children regardless of locale order. Parents outside the domain's configured `locales` are read and validated, but never rewritten. Sync's `total` counts the variant's local active entries, not inherited ones.
+
+Status counts locally `translated` and `inherited` source messages separately; together with `missing` and `untranslated`, they sum to `total`. Inherited messages do not appear in gap locations and satisfy `--strict`. Obsolete counts remain local to each catalog. A plural list cannot cover a singular source call. Runtime fallback locales are not considered by sync or status: only explicit catalog inheritance supplies tooling coverage.
+
 The writer rewrites the complete file deterministically. Do not rely on manually added comments, custom top-level fields, or hand-chosen ordering surviving synchronization.
 
 ## Runtime export
 
-`Catalog::export()` and `Translator::exportMany()` produce JSON-ready data with:
+`Catalog::export()`, `Translator::export()`, and `Translator::exportMany()` produce JSON-ready data with:
 
 - `plural`
 - `messages`
 - optional `contexts`
 
-They omit `null`, empty plural lists, and both obsolete sections. `Translator::exportMany()` also removes fallback entries that can no longer be reached, tracking ordinary IDs and each `(context, ID)` pair independently. A locale-specific payload entry is removed only when both its ordinary and contextual maps are empty.
+`Catalog::export()` and `Translator::export()` remain single-catalog exports: neither includes inherited translations or an `extends` field. Flattening parents into one plural rule would change translation behavior. Use `Translator::exportMany()` for the complete resolution chain; it expands both inheritance and runtime fallbacks into ordered entries with the existing payload shape and each supplying catalog's plural rule. The JavaScript runtime needs no parent lookup or inheritance configuration.
+
+All exports omit `null`, empty plural lists, and both obsolete sections. `Translator::exportMany()` also removes parent and fallback entries that can no longer be reached, tracking ordinary IDs and each `(context, ID)` pair independently. A locale-specific payload entry is removed only when both its ordinary and contextual maps are empty.
 
 `json_encode()` turns a map whose keys are exactly `0` to `n-1` into a JSON array. This includes an empty map. The JavaScript runtime reads such arrays as maps.

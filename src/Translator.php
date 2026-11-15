@@ -24,11 +24,14 @@ final class Translator
 	/** @var list<string> */
 	private array $order;
 
-	/** @var list<string> Locale resolution order: the primary locale, then its fallbacks. */
+	/** @var non-empty-list<string> Locale resolution order: the primary locale, then its fallbacks. */
 	private array $locales;
 
 	/** @var array<string, Catalog> */
 	private array $catalogs = [];
+
+	/** @var array<string, list<Catalog>> */
+	private array $chains = [];
 
 	/**
 	 * Locale ids may contain only ASCII letters, digits, hyphens, and underscores.
@@ -211,7 +214,7 @@ final class Translator
 
 	/**
 	 * Canonical, JSON-ready catalog data for one domain at the primary locale:
-	 * the plural rule id and translated messages. Fallback locales are not
+	 * the plural rule id and translated messages. Parents and fallback locales are not
 	 * consulted here — {@see self::exportMany()} ships the whole resolution
 	 * chain. Empty when the domain is not part of this translator's cascade.
 	 *
@@ -285,8 +288,8 @@ final class Translator
 		$placed = [];
 		$placedContexts = [];
 
-		foreach ($this->locales as $i => $locale) {
-			$export = $this->catalog($domain, $locale)->export();
+		foreach ($this->chain($domain) as $i => $catalog) {
+			$export = $catalog->export();
 			$placement = self::place($export['messages'], $placed);
 			$messages = $placement['messages'];
 			$placed = $placement['placed'];
@@ -349,8 +352,8 @@ final class Translator
 	 */
 	private function entry(string $domain, string $id, ?string $context): ?string
 	{
-		foreach ($this->locales as $locale) {
-			$entry = $this->catalog($domain, $locale)->get($id, $context);
+		foreach ($this->chain($domain) as $catalog) {
+			$entry = $catalog->get($id, $context);
 
 			if (is_string($entry)) {
 				return $entry;
@@ -373,8 +376,8 @@ final class Translator
 		array $args,
 		?string $context,
 	): ?string {
-		foreach ($this->locales as $locale) {
-			$form = $this->pluralFrom($this->catalog($domain, $locale), $one, $n, $args, $context);
+		foreach ($this->chain($domain) as $catalog) {
+			$form = $this->pluralFrom($catalog, $one, $n, $args, $context);
 
 			if ($form !== null) {
 				return $form;
@@ -411,6 +414,27 @@ final class Translator
 		}
 
 		return null;
+	}
+
+	/** @return list<Catalog> */
+	private function chain(string $domain): array
+	{
+		if (array_key_exists($domain, $this->chains)) {
+			return $this->chains[$domain];
+		}
+
+		$catalogs = [];
+
+		foreach ($this->locales as $locale) {
+			array_push($catalogs, ...Inheritance::chain(
+				$domain,
+				$this->domains[$domain],
+				$locale,
+				fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
+			));
+		}
+
+		return $this->chains[$domain] = $catalogs;
 	}
 
 	private function catalog(string $domain, string $locale): Catalog

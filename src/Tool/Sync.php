@@ -27,10 +27,24 @@ final class Sync
 		$fresh = $extraction['messages'];
 		$freshContexts = $extraction['contexts'];
 
+		/** @var array<array-key, int> $depths */
+		$depths = [];
+
+		foreach ($this->domain->locales as $locale) {
+			$depths[$locale] = count(CatalogFile::chain($this->domain, $locale));
+		}
+
+		asort($depths);
+		$results = [];
+
+		foreach (array_keys($depths) as $locale) {
+			$results[$locale] = $this->reconcile((string) $locale, $fresh, $freshContexts);
+		}
+
 		$locales = [];
 
 		foreach ($this->domain->locales as $locale) {
-			$locales[$locale] = $this->reconcile($locale, $fresh, $freshContexts);
+			$locales[$locale] = $results[$locale];
 		}
 
 		return new SyncReport($this->domain->name, $locales, $extraction['warnings']);
@@ -44,8 +58,9 @@ final class Sync
 	private function reconcile(string $locale, array $fresh, array $freshContexts): array
 	{
 		$file = $this->domain->file($locale);
-		$catalog = CatalogFile::load($file);
-		$section = $this->reconcileSection($fresh, $catalog->messages, $catalog->obsolete);
+		$parents = CatalogFile::chain($this->domain, $locale);
+		$catalog = array_shift($parents);
+		$section = $this->reconcileSection($fresh, $catalog->messages, $catalog->obsolete, $parents);
 		$messages = $section['messages'];
 		$added = $section['added'];
 		$contexts = [];
@@ -55,6 +70,7 @@ final class Sync
 				$contextFresh,
 				$catalog->contexts[$context] ?? [],
 				$catalog->obsoleteContexts[$context] ?? [],
+				$parents,
 			);
 			$contexts[$context] = $section['messages'];
 			$added += $section['added'];
@@ -80,6 +96,7 @@ final class Sync
 			$catalog->plural,
 			$contexts,
 			$obsoleteContexts,
+			$catalog->extends,
 		);
 		$rendered = $next->render();
 		$changed = !is_file($file) || file_get_contents($file) !== $rendered;
@@ -124,14 +141,25 @@ final class Sync
 	 * @param array<array-key, Message> $fresh
 	 * @param array<array-key, string|list<string>|null> $messages
 	 * @param array<array-key, string|list<string>|null> $obsolete
+	 * @param list<CatalogFile> $parents
 	 * @return array{messages: array<array-key, string|list<string>|null>, added: int}
 	 */
-	private function reconcileSection(array $fresh, array $messages, array $obsolete): array
+	private function reconcileSection(array $fresh, array $messages, array $obsolete, array $parents): array
 	{
 		$next = [];
 		$added = 0;
 
-		foreach (array_keys($fresh) as $id) {
+		foreach ($fresh as $id => $message) {
+			$entry = array_key_exists($id, $messages) ? $messages[$id] : $obsolete[$id] ?? null;
+			$untranslated = $entry === null || $entry === [];
+
+			if (
+				$untranslated
+				&& array_any($parents, static fn(CatalogFile $parent): bool => $parent->covers($message))
+			) {
+				continue;
+			}
+
 			if (array_key_exists($id, $messages)) {
 				$next[$id] = $messages[$id];
 			} elseif (array_key_exists($id, $obsolete)) {

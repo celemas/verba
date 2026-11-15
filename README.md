@@ -117,6 +117,32 @@ return [
 - `contexts` groups active translations by context; `obsolete_contexts` parks vanished contextual messages. Both use the same value types as `messages`.
 - Plural rules for common languages are built in. A catalog may borrow another language's rule with `'plural' => 'ru'`.
 
+### Locale variants
+
+A catalog can inherit from another locale in the same domain using `extends`. Keep the parent complete and store only differences in the variant:
+
+```php
+// i18n/app.en_US.php
+return [
+    'extends' => 'en_GB',
+    'messages' => [
+        'Choose a colour' => 'Choose a color',
+    ],
+];
+```
+
+```php
+$translator = new Translator('en_US', ['app' => __DIR__ . '/i18n']);
+```
+
+Lookups try `app.en_US.php`, then `app.en_GB.php` and any further ancestors, before configured fallback locales. Each fallback locale also brings its parent chain. All of these precede the next domain. Parents are explicit: `en_US` does not automatically inherit from `en`.
+
+The same pattern supports German forms of address: use a complete informal `app.de.php` and a sparse `app.de-formal.php` with `'extends' => 'de'`. The variant uses German plural rules. Inherited wording is not checked for formality, so review every sentence that addresses the reader.
+
+Missing entries, `null`, and empty plural lists inherit; explicit translations override. Contexts remain independent, and inherited plurals use the supplying catalog's rule. Cycles, invalid parent locale IDs, and missing parent files raise `UnexpectedValueException`.
+
+Sync preserves `extends` and omits placeholders covered by ancestors; status reports inherited translations separately and accepts them in `--strict` mode. `exportMany()` includes inheritance for the browser without a JavaScript runtime update. See the [catalog reference](docs/catalog-format.md#extends) for the full contract.
+
 ## Extraction
 
 Scanners find the calls; a `Domain` ties them to a catalog directory and locale set.
@@ -177,7 +203,7 @@ $runner->add([new SyncCommand([$domain]), new StatusCommand([$domain])]);
 ```
 
 - `i18n:sync` — scan sources and reconcile every catalog. New ids are added as untranslated, existing translations are kept, a reappearing id is restored from its obsolete section, and a vanished id is parked there and named in the output. Running it twice changes nothing. `--prune` drops ordinary and contextual obsolete sections, naming what it drops.
-- `i18n:status` — report per locale how many ids are missing, untranslated, translated, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps and the obsolete ids, telling those a sync already parked from those still in the live section.
+- `i18n:status` — report per locale how many ids are missing, untranslated, locally translated, inherited, and obsolete. `--strict` exits non-zero on any gap (a CI gate); `--where` lists the source locations of the gaps and the obsolete ids, telling those a sync already parked from those still in the live section.
 
 ## Mutation testing
 

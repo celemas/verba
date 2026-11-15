@@ -41,10 +41,11 @@ final class StatusCommand
 
 			foreach ($report->locales as $locale => $stat) {
 				$io->line(
-					'  %s  %d/%d translated, %d missing, %d untranslated, %d obsolete',
+					'  %s  %d/%d translated, %d inherited, %d missing, %d untranslated, %d obsolete',
 					$locale,
 					$stat['translated'],
 					$stat['total'],
+					$stat['inherited'],
 					$stat['missing'],
 					$stat['untranslated'],
 					$stat['obsolete'],

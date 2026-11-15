@@ -16,6 +16,7 @@ final class StatusReport
 	 *     missing: int,
 	 *     untranslated: int,
 	 *     translated: int,
+	 *     inherited: int,
 	 *     obsolete: int,
 	 *     total: int,
 	 *     locations: list<string>,

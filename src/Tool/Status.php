@@ -39,6 +39,7 @@ final class Status
 	 *     missing: int,
 	 *     untranslated: int,
 	 *     translated: int,
+	 *     inherited: int,
 	 *     obsolete: int,
 	 *     total: int,
 	 *     locations: list<string>,
@@ -48,14 +49,16 @@ final class Status
 	 */
 	private function inspect(string $locale, array $fresh, array $freshContexts): array
 	{
-		$catalog = CatalogFile::load($this->domain->file($locale));
-		$summary = self::inspectSection($fresh, $catalog->messages);
+		$parents = CatalogFile::chain($this->domain, $locale);
+		$catalog = array_shift($parents);
+		$summary = self::inspectSection($fresh, $catalog->messages, $parents);
 		$stale = self::stale($catalog->messages, $catalog->obsolete, $fresh);
 
 		foreach ($freshContexts as $context => $contextFresh) {
 			$contextSummary = self::inspectSection(
 				$contextFresh,
 				$catalog->contexts[$context] ?? [],
+				$parents,
 			);
 			$summary = self::combine($summary, $contextSummary);
 		}
@@ -80,6 +83,7 @@ final class Status
 			'missing' => $summary['missing'],
 			'untranslated' => $summary['untranslated'],
 			'translated' => $summary['translated'],
+			'inherited' => $summary['inherited'],
 			'obsolete' => count($stale['parked']) + count($stale['vanished']),
 			'total' => $summary['total'],
 			'locations' => $summary['locations'],
@@ -91,26 +95,34 @@ final class Status
 	/**
 	 * @param array<array-key, Message> $fresh
 	 * @param array<array-key, string|list<string>|null> $messages
+	 * @param list<CatalogFile> $parents
 	 * @return array{
 	 *     missing: int,
 	 *     untranslated: int,
 	 *     translated: int,
+	 *     inherited: int,
 	 *     total: int,
 	 *     locations: list<string>,
 	 * }
 	 */
-	private static function inspectSection(array $fresh, array $messages): array
+	private static function inspectSection(array $fresh, array $messages, array $parents): array
 	{
 		$missing = 0;
 		$untranslated = 0;
 		$translated = 0;
+		$inherited = 0;
 		$locations = [];
 
 		foreach ($fresh as $id => $message) {
-			if (!array_key_exists($id, $messages)) {
+			$entry = $messages[$id] ?? null;
+			$covered = is_string($entry) || $message->plural !== null && is_array($entry) && $entry !== [];
+
+			if (!$covered && array_any($parents, static fn(CatalogFile $parent): bool => $parent->covers($message))) {
+				$inherited++;
+			} elseif (!array_key_exists($id, $messages)) {
 				$missing++;
 				$locations = [...$locations, ...$message->locations];
-			} elseif ($messages[$id] === null || $messages[$id] === []) {
+			} elseif (!$covered) {
 				$untranslated++;
 				$locations = [...$locations, ...$message->locations];
 			} else {
@@ -122,15 +134,16 @@ final class Status
 			'missing' => $missing,
 			'untranslated' => $untranslated,
 			'translated' => $translated,
+			'inherited' => $inherited,
 			'total' => count($fresh),
 			'locations' => $locations,
 		];
 	}
 
 	/**
-	 * @param array{missing: int, untranslated: int, translated: int, total: int, locations: list<string>} $left
-	 * @param array{missing: int, untranslated: int, translated: int, total: int, locations: list<string>} $right
-	 * @return array{missing: int, untranslated: int, translated: int, total: int, locations: list<string>}
+	 * @param array{missing: int, untranslated: int, translated: int, inherited: int, total: int, locations: list<string>} $left
+	 * @param array{missing: int, untranslated: int, translated: int, inherited: int, total: int, locations: list<string>} $right
+	 * @return array{missing: int, untranslated: int, translated: int, inherited: int, total: int, locations: list<string>}
 	 */
 	private static function combine(array $left, array $right): array
 	{
@@ -138,6 +151,7 @@ final class Status
 			'missing' => $left['missing'] + $right['missing'],
 			'untranslated' => $left['untranslated'] + $right['untranslated'],
 			'translated' => $left['translated'] + $right['translated'],
+			'inherited' => $left['inherited'] + $right['inherited'],
 			'total' => $left['total'] + $right['total'],
 			'locations' => [...$left['locations'], ...$right['locations']],
 		];

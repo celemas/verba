@@ -25,6 +25,7 @@ final class Catalog
 		private readonly array $messages,
 		private readonly string $pluralKey,
 		private readonly array $contexts = [],
+		public readonly ?string $extends = null,
 	) {
 		$this->plural = Plurals::rule($pluralKey);
 	}
@@ -46,6 +47,7 @@ final class Catalog
 			self::readMessages($data['messages'] ?? null),
 			self::readPluralKey($data['plural'] ?? null, $locale),
 			self::readContexts($data['contexts'] ?? null),
+			Inheritance::parent($data['extends'] ?? null, $file),
 		);
 	}
 

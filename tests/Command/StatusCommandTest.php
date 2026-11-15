@@ -86,7 +86,7 @@ class StatusCommandTest extends TestCase
 		[$exit, $output] = $this->capture(new StatusCommand([$this->domain(['de'])]));
 
 		$this->assertSame(1, $exit);
-		$this->assertStringContainsString('0/1 translated, 0 missing, 1 untranslated', $output);
+		$this->assertStringContainsString('0/1 translated, 0 inherited, 0 missing, 1 untranslated', $output);
 	}
 
 	public function testStrictPassesWhenClean(): void
@@ -98,6 +98,22 @@ class StatusCommandTest extends TestCase
 		[$exit] = $this->capture(new StatusCommand([$this->domain(['de'])]));
 
 		$this->assertSame(0, $exit);
+	}
+
+	public function testStrictAcceptsInheritedTranslations(): void
+	{
+		$_SERVER['argv'] = ['run', 'i18n:status', '--strict', '--where'];
+		$this->write('src/x.php', "<?php\n__('Save');\n");
+		$this->write('i18n/app.de.php', "<?php return ['messages' => ['Save' => 'Speichern']];");
+		$this->write('i18n/app.de-formal.php', "<?php return ['extends' => 'de'];");
+
+		[$exit, $output] = $this->capture(new StatusCommand([$this->domain(['de-formal'])]));
+
+		$this->assertSame(0, $exit);
+		$this->assertSame(
+			"i18n: app\n  de-formal  0/1 translated, 1 inherited, 0 missing, 0 untranslated, 0 obsolete\n",
+			$output,
+		);
 	}
 
 	public function testWhereListsLocations(): void

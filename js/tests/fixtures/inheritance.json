@@ -1,0 +1,39 @@
+{
+	"locale": "en_US",
+	"domains": [
+		{
+			"domain": "variant",
+			"plural": "en_US",
+			"messages": {
+				"Choose a colour": "Choose a color",
+				"Local forms": ["local"],
+				"Mixed": ["Local one", "Local many"]
+			},
+			"contexts": {
+				"menu": {
+					"Open": "Open menu"
+				}
+			}
+		},
+		{
+			"domain": "variant",
+			"plural": "ru",
+			"messages": {
+				"Save": "Save changes",
+				"one item": [":count base-one", ":count base-few", ":count base-many"],
+				"Mixed": "Base singular"
+			},
+			"contexts": {
+				"0": {
+					"404": "Not found"
+				},
+				"inventory": {
+					"one item": [":count context-one", ":count context-few", ":count context-many"]
+				},
+				"menu": {
+					"Save": "Save menu"
+				}
+			}
+		}
+	]
+}

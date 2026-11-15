@@ -52,6 +52,12 @@ the global helpers use the source-id fallback. Do not call the module-global
 translators. The helper API does not currently support request-local translated
 SSR.
 
+PHP catalogs may declare `extends` to inherit from another locale. `exportMany()`
+expands parent chains and runtime fallback locales into ordered payload entries,
+each retaining its own plural rule. No inheritance configuration or parent loading
+is needed in JavaScript. Use `exportMany()`, not the single-catalog `export()`, to
+include inherited messages.
+
 Only positional `sprintf` interpolation is PHP-only; strings shared with the
 frontend should use named `:placeholder` arguments.
 

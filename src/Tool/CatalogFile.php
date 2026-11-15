@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tool;
 
+use Celema\Verba\Inheritance;
 use UnexpectedValueException;
 
 /**
@@ -22,12 +23,14 @@ final class CatalogFile
 	 * @param array<array-key, array<array-key, string|list<string>|null>> $contexts
 	 * @param array<array-key, array<array-key, string|list<string>|null>> $obsoleteContexts
 	 */
+	// @mago-expect lint:excessive-parameter-list Existing positional catalog sections must retain their positions.
 	public function __construct(
 		public array $messages,
 		public array $obsolete,
 		public ?string $plural,
 		public array $contexts = [],
 		public array $obsoleteContexts = [],
+		public ?string $extends = null,
 	) {}
 
 	public static function load(string $file): self
@@ -45,7 +48,22 @@ final class CatalogFile
 			self::pluralKey($data['plural'] ?? null),
 			self::contexts($data['contexts'] ?? null, $file, 'contexts'),
 			self::contexts($data['obsolete_contexts'] ?? null, $file, 'obsolete_contexts'),
+			Inheritance::parent($data['extends'] ?? null, $file),
 		);
+	}
+
+	/** @return non-empty-list<self> */
+	public static function chain(Domain $domain, string $locale): array
+	{
+		return Inheritance::chain($domain->name, $domain->dir, $locale, self::load(...));
+	}
+
+	public function covers(Message $message): bool
+	{
+		$messages = $message->context === null ? $this->messages : $this->contexts[$message->context] ?? [];
+		$entry = $messages[$message->id] ?? null;
+
+		return is_string($entry) || $message->plural !== null && is_array($entry) && $entry !== [];
 	}
 
 	private static function pluralKey(mixed $plural): ?string
@@ -56,6 +74,10 @@ final class CatalogFile
 	public function render(): string
 	{
 		$lines = ['<?php', '', 'declare(strict_types=1);', '', 'return ['];
+
+		if ($this->extends !== null) {
+			$lines[] = "\t'extends' => " . $this->quote($this->extends) . ',';
+		}
 
 		if ($this->plural !== null) {
 			$lines[] = "\t'plural' => " . $this->quote($this->plural) . ',';
