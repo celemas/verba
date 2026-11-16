@@ -18,6 +18,7 @@
 
 ### Fixed
 
+- `Translator` rejects a locale ID that ends in a newline, such as `"en\n"`, as `extends` declarations already do.
 - Plural rules honor the region of a locale ID that carries further subtags: `pt_BR-formal` uses the Brazilian Portuguese rule in PHP and JavaScript instead of the two-form default.
 
 ## [0.6.1](https://codefloe.com/celema/verba/src/tag/0.6.1) (2026-10-16)

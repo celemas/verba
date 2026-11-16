@@ -17,7 +17,7 @@ final class Inheritance
 			return null;
 		}
 
-		if (!is_string($parent) || preg_match('/^[A-Za-z0-9_-]+$/D', $parent) !== 1) {
+		if (!is_string($parent) || !Locale::valid($parent)) {
 			throw new UnexpectedValueException("Invalid extends in '{$file}': expected a locale id");
 		}
 

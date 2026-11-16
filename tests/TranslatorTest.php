@@ -419,6 +419,14 @@ class TranslatorTest extends TestCase
 		new Translator('de/../evil', []);
 	}
 
+	public function testRejectsLocaleIdWithTrailingNewline(): void
+	{
+		$this->expectException(InvalidArgumentException::class);
+		$this->expectExceptionMessage("Invalid locale id 'de\n'");
+
+		new Translator("de\n", []);
+	}
+
 	public function testDomainAndLocaleNamesDoNotShareCatalogs(): void
 	{
 		// 'shop' + 'de' and 'shopd' + 'e' concatenate to the same string.

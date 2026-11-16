@@ -55,8 +55,7 @@ final class Translator
 		$this->locales = array_values(array_unique([$locale, ...$fallback]));
 
 		foreach ($this->locales as $localeId) {
-			// Locale ids become catalog filename segments; reject path characters.
-			if (preg_match('/^[A-Za-z0-9_-]+$/', $localeId) !== 1) {
+			if (!Locale::valid($localeId)) {
 				throw new InvalidArgumentException("Invalid locale id '{$localeId}'");
 			}
 		}
