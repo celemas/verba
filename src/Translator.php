@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Celema\Verba;
 
+use Generator;
 use InvalidArgumentException;
 
 /**
@@ -30,7 +31,11 @@ final class Translator
 	/** @var array<string, Catalog> */
 	private array $catalogs = [];
 
-	/** @var array<string, list<Catalog>> */
+	/**
+	 * Per domain, the catalog and ancestors of each locale a lookup has reached.
+	 *
+	 * @var array<string, array<array-key, non-empty-list<Catalog>>>
+	 */
 	private array $chains = [];
 
 	/**
@@ -416,25 +421,27 @@ final class Translator
 		return null;
 	}
 
-	/** @return list<Catalog> */
-	private function chain(string $domain): array
+	/**
+	 * A domain's catalogs in lookup order. A locale's parent chain is resolved
+	 * when a lookup reaches it, so fallback catalogs stay unread while earlier
+	 * catalogs supply the message.
+	 *
+	 * @return Generator<int, Catalog>
+	 */
+	private function chain(string $domain): Generator
 	{
-		if (array_key_exists($domain, $this->chains)) {
-			return $this->chains[$domain];
-		}
-
-		$catalogs = [];
-
 		foreach ($this->locales as $locale) {
-			array_push($catalogs, ...Inheritance::chain(
+			$this->chains[$domain][$locale] ??= Inheritance::chain(
 				$domain,
 				$this->domains[$domain],
 				$locale,
 				fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
-			));
-		}
+			);
 
-		return $this->chains[$domain] = $catalogs;
+			foreach ($this->chains[$domain][$locale] as $catalog) {
+				yield $catalog;
+			}
+		}
 	}
 
 	private function catalog(string $domain, string $locale): Catalog

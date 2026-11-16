@@ -28,6 +28,7 @@
 		AssignCoalesce: {
 			ignore: [
 				'Celema\\Verba\\Translator::catalog',
+				'Celema\\Verba\\Translator::chain',
 				'Celema\\Verba\\Verba::current',
 			],
 		},
@@ -57,8 +58,6 @@
 			ignore: [
 				'Celema\\Verba\\Tool\\PhpScanner::arguments',
 				'Celema\\Verba\\Tool\\JavascriptScanner::arguments',
-				// Memoization: without the early return, the same chain is rebuilt.
-				'Celema\\Verba\\Translator::chain',
 			],
 		},
 		// Literal segments are always balanced, so the loop never reads past

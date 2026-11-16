@@ -91,6 +91,44 @@ class InheritanceTest extends TestCase
 		);
 	}
 
+	public function testFallbackChainsLoadOnlyWhenReached(): void
+	{
+		$this->write('app.de.php', "<?php return ['messages' => ['A' => 'primary']];");
+		$fallback = $this->write(
+			'app.en.php',
+			"<?php file_put_contents(__FILE__ . '.reads', '.', FILE_APPEND); return ['extends' => 'en_GB'];",
+		);
+		$this->write('app.en_GB.php', "<?php return ['messages' => ['B' => 'fallback parent']];");
+		$t = new Translator('de', ['app' => $this->tmpDir()], ['en']);
+
+		$this->assertSame('primary', $t->translate('A'));
+		$this->assertFileDoesNotExist($fallback . '.reads');
+		$this->assertSame('fallback parent', $t->translate('B'));
+		$this->assertSame('C', $t->translate('C'));
+		$this->assertSame('.', file_get_contents($fallback . '.reads'));
+	}
+
+	public function testBrokenFallbackChainFailsOnlyLookupsThatReachIt(): void
+	{
+		$this->write('app.de.php', "<?php return ['messages' => ['A' => 'primary', 'one' => ['eins', 'viele']]];");
+		$this->write('app.en.php', "<?php return ['extends' => 'missing'];");
+		$t = new Translator('de', ['app' => $this->tmpDir()], ['en']);
+
+		$this->assertSame('primary', $t->translate('A'));
+		$this->assertSame('viele', $t->translatePlural('one', 'many', 2));
+
+		foreach (['B', 'C'] as $missing) {
+			try {
+				$t->translate($missing);
+				$this->fail('Broken fallback chain accepted');
+			} catch (UnexpectedValueException $e) {
+				$this->assertSame("Missing parent catalog '{$this->tmpDir()}/app.missing.php'", $e->getMessage());
+			}
+		}
+
+		$this->assertSame('primary', $t->translate('A'));
+	}
+
 	public function testFormalGermanUsesGermanPlurals(): void
 	{
 		$this->write(
