@@ -52,12 +52,6 @@ final class CatalogFile
 		);
 	}
 
-	/** @return non-empty-list<self> */
-	public static function chain(Domain $domain, string $locale): array
-	{
-		return Inheritance::chain($domain->name, $domain->dir, $locale, self::load(...));
-	}
-
 	public function covers(Message $message): bool
 	{
 		$messages = $message->context === null ? $this->messages : $this->contexts[$message->context] ?? [];

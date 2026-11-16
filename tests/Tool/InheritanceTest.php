@@ -227,6 +227,22 @@ __n('LocalPlural', 'LocalPlurals', 2);
 		$this->assertFalse($report->clean());
 	}
 
+	public function testStatusReadsEachCatalogOnce(): void
+	{
+		$this->write('src/x.php', "<?php __('Save');");
+		$base = $this->write(
+			'i18n/app.en.php',
+			"<?php file_put_contents(__FILE__ . '.reads', '.', FILE_APPEND); return ['messages' => ['Save' => 'Saved']];",
+		);
+		$this->catalog('en_GB', new CatalogFile([], [], null, extends: 'en'));
+		$this->catalog('en_US', new CatalogFile([], [], null, extends: 'en_GB'));
+
+		$report = new Status($this->domain(['en', 'en_GB', 'en_US']))->run();
+
+		$this->assertSame('.', file_get_contents($base . '.reads'));
+		$this->assertSame(1, $report->locales['en_US']['inherited']);
+	}
+
 	public function testNumericLocaleInheritance(): void
 	{
 		$this->write('src/x.php', "<?php __('Save');");

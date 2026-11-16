@@ -22,11 +22,12 @@ final class Status
 		$extraction = new Extractor($this->domain)->extract();
 		$fresh = $extraction['messages'];
 		$freshContexts = $extraction['contexts'];
+		$files = new CatalogFiles($this->domain);
 
 		$locales = [];
 
 		foreach ($this->domain->locales as $locale) {
-			$locales[$locale] = $this->inspect($locale, $fresh, $freshContexts);
+			$locales[$locale] = self::inspect($files, $locale, $fresh, $freshContexts);
 		}
 
 		return new StatusReport($this->domain->name, $locales, $extraction['warnings']);
@@ -47,9 +48,9 @@ final class Status
 	 *     vanished: list<string>,
 	 * }
 	 */
-	private function inspect(string $locale, array $fresh, array $freshContexts): array
+	private static function inspect(CatalogFiles $files, string $locale, array $fresh, array $freshContexts): array
 	{
-		$parents = CatalogFile::chain($this->domain, $locale);
+		$parents = $files->chain($locale);
 		$catalog = array_shift($parents);
 		$summary = self::inspectSection($fresh, $catalog->messages, $parents);
 		$stale = self::stale($catalog->messages, $catalog->obsolete, $fresh);
