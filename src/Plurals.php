@@ -11,7 +11,8 @@ use Closure;
  *
  * Only the exceptions are listed; every other language falls through to the
  * two-form `n !== 1` default. Region subtags are honored where they change the
- * rule (e.g. `pt_BR`). A catalog may override its rule via the `plural` key.
+ * rule (e.g. `pt_BR`), also when further subtags follow (`pt_BR-formal`). A
+ * catalog may override its rule via the `plural` key.
  *
  * @api
  */
@@ -46,7 +47,10 @@ final class Plurals
 		$lang = explode('_', $norm)[0];
 
 		return match (true) {
-			$norm === 'pt_br', $lang === 'fr' => [2, static fn(int $n): int => $n > 1 ? 1 : 0],
+			$norm === 'pt_br', str_starts_with($norm, 'pt_br_'), $lang === 'fr' => [
+				2,
+				static fn(int $n): int => $n > 1 ? 1 : 0,
+			],
 			in_array($lang, ['ja', 'ko', 'zh', 'vi', 'th', 'id', 'fa'], true) => [
 				1,
 				static fn(int $n): int => 0,

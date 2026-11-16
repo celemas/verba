@@ -4,7 +4,8 @@
  * Returns the rule mapping a count to its zero-based plural form index —
  * the same classic gettext formulas as the PHP runtime. Only the exceptions
  * are listed; every other language falls through to the two-form `n !== 1`
- * default. Region subtags are honored where they change the rule.
+ * default. Region subtags are honored where they change the rule, also when
+ * further subtags follow.
  *
  * @param {string} key
  * @returns {PluralRule}
@@ -13,7 +14,7 @@ export function pluralRule(key) {
 	const norm = key.toLowerCase().replaceAll('-', '_');
 	const lang = norm.split('_')[0];
 
-	if (norm === 'pt_br' || lang === 'fr') {
+	if (norm === 'pt_br' || norm.startsWith('pt_br_') || lang === 'fr') {
 		return (n) => (n > 1 ? 1 : 0);
 	}
 

@@ -14,6 +14,10 @@
 - Status command output includes an inherited count. Consumers of `StatusReport` receive an additional `inherited` key per locale.
 - `i18n:status` no longer counts a plural list as covering a singular source call, matching runtime lookup behavior.
 
+### Fixed
+
+- Plural rules honor the region of a locale ID that carries further subtags: `pt_BR-formal` uses the Brazilian Portuguese rule in PHP and JavaScript instead of the two-form default.
+
 ## [0.6.1](https://codefloe.com/celema/verba/src/tag/0.6.1) (2026-10-16)
 
 ### Changed

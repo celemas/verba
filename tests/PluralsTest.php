@@ -63,6 +63,9 @@ class PluralsTest extends TestCase
 			['pt-BR', 3, 1],
 			['pt-BR', 0, 0],
 			['PT_BR', 0, 0],
+			['pt_BR-formal', 0, 0],
+			['pt-br-formal', 2, 1],
+			['pt_PT', 0, 1],
 			['RU', 5, 2],
 			// single form
 			['ja', 5, 0],

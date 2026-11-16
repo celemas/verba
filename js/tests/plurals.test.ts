@@ -17,6 +17,7 @@ describe('pluralRule', () => {
 
 	it('honors the brazilian region subtag', () => {
 		expect(pick('pt-BR', [0, 1, 2])).toEqual([0, 0, 1]);
+		expect(pick('pt_BR-formal', [0, 1, 2])).toEqual([0, 0, 1]);
 		expect(pick('pt', [0, 1, 2])).toEqual([1, 0, 1]);
 	});
 
