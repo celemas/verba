@@ -130,6 +130,22 @@ __p('0', '404');
 		}
 	}
 
+	public function testSyncReadsEachCatalogOnce(): void
+	{
+		$this->write('src/x.php', "<?php __('Save');");
+		$base = $this->write(
+			'i18n/app.en.php',
+			"<?php file_put_contents(__FILE__ . '.reads', '.', FILE_APPEND); return ['messages' => ['Save' => 'Saved']];",
+		);
+		$this->catalog('en_GB', new CatalogFile(['Save' => null], [], null, extends: 'en'));
+		$file = $this->catalog('en_US', new CatalogFile(['Save' => null], [], null, extends: 'en_GB'));
+
+		new Sync($this->domain(['en_US', 'en_GB']))->run();
+
+		$this->assertSame('.', file_get_contents($base . '.reads'));
+		$this->assertSame([], CatalogFile::load($file)->messages);
+	}
+
 	public function testSyncValidatesAllChainsBeforeWriting(): void
 	{
 		$this->write('src/x.php', "<?php __('New');");

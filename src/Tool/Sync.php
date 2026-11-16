@@ -26,19 +26,20 @@ final class Sync
 		$extraction = new Extractor($this->domain)->extract();
 		$fresh = $extraction['messages'];
 		$freshContexts = $extraction['contexts'];
+		$files = new CatalogFiles($this->domain);
 
 		/** @var array<array-key, int> $depths */
 		$depths = [];
 
 		foreach ($this->domain->locales as $locale) {
-			$depths[$locale] = count(CatalogFile::chain($this->domain, $locale));
+			$depths[$locale] = count($files->chain($locale));
 		}
 
 		asort($depths);
 		$results = [];
 
 		foreach (array_keys($depths) as $locale) {
-			$results[$locale] = $this->reconcile((string) $locale, $fresh, $freshContexts);
+			$results[$locale] = $this->reconcile($files, (string) $locale, $fresh, $freshContexts);
 		}
 
 		$locales = [];
@@ -55,10 +56,10 @@ final class Sync
 	 * @param array<array-key, array<array-key, Message>> $freshContexts
 	 * @return array{added: int, obsolete: int, total: int, changed: bool, vanished: list<string>}
 	 */
-	private function reconcile(string $locale, array $fresh, array $freshContexts): array
+	private function reconcile(CatalogFiles $files, string $locale, array $fresh, array $freshContexts): array
 	{
 		$file = $this->domain->file($locale);
-		$parents = CatalogFile::chain($this->domain, $locale);
+		$parents = $files->chain($locale);
 		$catalog = array_shift($parents);
 		$section = $this->reconcileSection($fresh, $catalog->messages, $catalog->obsolete, $parents);
 		$messages = $section['messages'];
@@ -98,6 +99,7 @@ final class Sync
 			$obsoleteContexts,
 			$catalog->extends,
 		);
+		$files->replace($locale, $next);
 		$rendered = $next->render();
 		$changed = !is_file($file) || file_get_contents($file) !== $rendered;
 
