@@ -50,7 +50,10 @@
 			"./vendor/bin/mago fmt --check",
 			"./vendor/bin/mago lint"
 		],
-		"coverage:test": "php -d xdebug.mode=coverage ./vendor/bin/phpunit --testdox --colors=always",
+		"coverage:test": [
+			"@putenv XDEBUG_MODE=coverage",
+			"./vendor/bin/phpunit --testdox --colors=always"
+		],
 		"coverage:analyze": "./vendor/bin/coverlyzer .coverage/coverage.php",
 		"coverage": [
 			"composer coverage:test",
