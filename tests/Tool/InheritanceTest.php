@@ -146,6 +146,27 @@ __p('0', '404');
 		$this->assertSame([], CatalogFile::load($file)->messages);
 	}
 
+	public function testToolingAcceptsConfiguredParentWithoutFile(): void
+	{
+		$this->write('src/x.php', "<?php __('Save');");
+		$file = $this->catalog('de-formal', new CatalogFile([], [], null, extends: 'de'));
+		$parent = $this->tmpDir() . '/i18n/app.de.php';
+		$domain = $this->domain(['de-formal', 'de']);
+
+		$status = new Status($domain)->run();
+
+		$this->assertSame(1, $status->locales['de']['missing']);
+		$this->assertSame(1, $status->locales['de-formal']['missing']);
+		$this->assertFileDoesNotExist($parent);
+
+		$report = new Sync($domain)->run();
+
+		$this->assertSame(1, $report->locales['de']['added']);
+		$this->assertSame(['Save' => null], CatalogFile::load($parent)->messages);
+		$this->assertSame(['Save' => null], CatalogFile::load($file)->messages);
+		$this->assertSame('de', CatalogFile::load($file)->extends);
+	}
+
 	public function testSyncValidatesAllChainsBeforeWriting(): void
 	{
 		$this->write('src/x.php', "<?php __('New');");

@@ -74,7 +74,7 @@ If all domains miss, the original message ID is returned. A pinned-domain lookup
 
 Missing entries, `null`, and empty plural lists fall through. An empty string is a translation and overrides the parent. Contexts are matched exactly. Plural lists are inherited as whole messages, never merged form by form; the supplying catalog's plural rule applies. Singular lookups skip plural lists, as they do with runtime fallbacks.
 
-Both runtime and tooling reject invalid parent IDs, missing parent files, and inheritance cycles with `UnexpectedValueException`. Runtime validation occurs when the domain's resolution chain is first used, including during `exportMany()`. A missing primary or runtime fallback catalog still behaves as an empty catalog; an explicitly declared parent must exist.
+Both runtime and tooling reject invalid parent IDs, missing parent files, and inheritance cycles with `UnexpectedValueException`. Runtime validation occurs when the domain's resolution chain is first used, including during `exportMany()`. A missing primary or runtime fallback catalog still behaves as an empty catalog; an explicitly declared parent must exist. Tooling makes one exception: a parent listed in the domain's configured `locales` may lack a file, because sync creates it. Until then sync and status read it as an empty catalog.
 
 `Catalog::load()` reads one file and exposes its `extends` property; it does not resolve parents itself. `CatalogFile::load()` likewise reads a single file for editing. `Translator` and the sync/status tooling resolve the chains.
 
@@ -236,7 +236,7 @@ All messages could live under one context map using a reserved key such as `defa
 
 For catalogs with `extends`, sync preserves the declaration and keeps the variant sparse. A source message translated by an ancestor needs no local placeholder; existing `null` and empty-list placeholders covered by ancestors are removed. Uncovered messages still receive placeholders. Explicit local translations remain, even when identical to a parent, and returning obsolete translations are restored before considering inheritance. Obsolete parent entries do not count as translations.
 
-Sync validates every configured locale's chain before writing files, then processes configured parents before children regardless of locale order. Parents outside the domain's configured `locales` are read and validated, but never rewritten. Sync's `total` counts the variant's local active entries, not inherited ones.
+Sync validates every configured locale's chain before writing files, then processes configured parents before children regardless of locale order. A configured parent without a file is created like any other configured locale. Parents outside the domain's configured `locales` are read and validated, but never rewritten. Sync's `total` counts the variant's local active entries, not inherited ones.
 
 Status counts locally `translated` and `inherited` source messages separately; together with `missing` and `untranslated`, they sum to `total`. Inherited messages do not appear in gap locations and satisfy `--strict`. Obsolete counts remain local to each catalog. A plural list cannot cover a singular source call. Runtime fallback locales are not considered by sync or status: only explicit catalog inheritance supplies tooling coverage.
 

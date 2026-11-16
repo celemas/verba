@@ -5,7 +5,7 @@
 ### Added
 
 - Catalogs can declare `'extends' => 'en_GB'` to inherit from one parent locale in the same domain. Parent chains precede runtime fallback locales, support contexts, and preserve the supplying catalog's plural rule. Invalid parent IDs, missing parents, and cycles raise `UnexpectedValueException`.
-- `i18n:sync` preserves inheritance declarations and keeps variant catalogs sparse, removing untranslated placeholders covered by ancestors while retaining explicit overrides. Configured parents are synced before their children, and all chains are validated before writes.
+- `i18n:sync` preserves inheritance declarations and keeps variant catalogs sparse, removing untranslated placeholders covered by ancestors while retaining explicit overrides. Configured parents are synced before their children and created when their file is missing, and all chains are validated before writes.
 - `i18n:status` reports an `inherited` count separately from locally translated messages; inherited translations satisfy `--strict` and do not appear as gaps.
 - `Translator::exportMany()` includes inherited catalogs using the existing browser payload format. Single-catalog `export()` methods remain local-only.
 

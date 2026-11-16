@@ -27,10 +27,16 @@ final class Inheritance
 	/**
 	 * @template T of Catalog|CatalogFile
 	 * @param Closure(string, string): T $load
+	 * @param list<string> $optional Parent locales that may lack a catalog file.
 	 * @return non-empty-list<T>
 	 */
-	public static function chain(string $domain, string $dir, string $locale, Closure $load): array
-	{
+	public static function chain(
+		string $domain,
+		string $dir,
+		string $locale,
+		Closure $load,
+		array $optional = [],
+	): array {
 		$chain = [];
 		$seen = [];
 
@@ -41,7 +47,7 @@ final class Inheritance
 				throw new UnexpectedValueException("Catalog inheritance cycle in '{$file}'");
 			}
 
-			if ($chain !== [] && !is_file($file)) {
+			if ($chain !== [] && !is_file($file) && !in_array($locale, $optional, true)) {
 				throw new UnexpectedValueException("Missing parent catalog '{$file}'");
 			}
 
