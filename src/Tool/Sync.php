@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tool;
 
+use Closure;
 use RuntimeException;
 
 /**
@@ -23,9 +24,43 @@ final class Sync
 
 	public function run(): SyncReport
 	{
+		return $this->prepare()();
+	}
+
+	/**
+	 * Syncs several domains. Every domain is extracted and its catalogs are
+	 * read before the first catalog is written, so an invalid catalog in any
+	 * domain leaves all of them untouched.
+	 *
+	 * @param list<Domain> $domains
+	 * @return list<SyncReport>
+	 */
+	public static function all(array $domains, bool $prune = false): array
+	{
+		$writes = [];
+
+		foreach ($domains as $domain) {
+			$writes[] = new self($domain, $prune)->prepare();
+		}
+
+		$reports = [];
+
+		foreach ($writes as $write) {
+			$reports[] = $write();
+		}
+
+		return $reports;
+	}
+
+	/**
+	 * Extracts the messages and reads every catalog, then returns the step
+	 * that writes the catalogs.
+	 *
+	 * @return Closure(): SyncReport
+	 */
+	private function prepare(): Closure
+	{
 		$extraction = new Extractor($this->domain)->extract();
-		$fresh = $extraction['messages'];
-		$freshContexts = $extraction['contexts'];
 		$files = new CatalogFiles($this->domain);
 
 		/** @var array<array-key, int> $depths */
@@ -36,19 +71,27 @@ final class Sync
 		}
 
 		asort($depths);
-		$results = [];
 
-		foreach (array_keys($depths) as $locale) {
-			$results[$locale] = $this->reconcile($files, (string) $locale, $fresh, $freshContexts);
-		}
+		return function () use ($extraction, $files, $depths): SyncReport {
+			$results = [];
 
-		$locales = [];
+			foreach (array_keys($depths) as $locale) {
+				$results[$locale] = $this->reconcile(
+					$files,
+					(string) $locale,
+					$extraction['messages'],
+					$extraction['contexts'],
+				);
+			}
 
-		foreach ($this->domain->locales as $locale) {
-			$locales[$locale] = $results[$locale];
-		}
+			$locales = [];
 
-		return new SyncReport($this->domain->name, $locales, $extraction['warnings']);
+			foreach ($this->domain->locales as $locale) {
+				$locales[$locale] = $results[$locale];
+			}
+
+			return new SyncReport($this->domain->name, $locales, $extraction['warnings']);
+		};
 	}
 
 	/**

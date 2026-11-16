@@ -30,8 +30,7 @@ final class SyncCommand
 		#[Opt('Drop obsolete messages from the catalogs')]
 		bool $prune = false,
 	): int {
-		foreach ($this->domains as $domain) {
-			$report = new Sync($domain, $prune)->run();
+		foreach (Sync::all($this->domains, $prune) as $report) {
 			$io->line('i18n: %s', $report->domain);
 
 			foreach ($report->locales as $locale => $stat) {

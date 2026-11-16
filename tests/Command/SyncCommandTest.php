@@ -12,6 +12,7 @@ use Celema\Verba\Tests\TestCase;
 use Celema\Verba\Tool\CatalogFile;
 use Celema\Verba\Tool\Domain;
 use Celema\Verba\Tool\PhpScanner;
+use UnexpectedValueException;
 
 class SyncCommandTest extends TestCase
 {
@@ -111,6 +112,26 @@ class SyncCommandTest extends TestCase
 		[, $error] = $this->capture(new SyncCommand([$this->domain()]));
 
 		$this->assertMatchesRegularExpression('/^(\e\[[0-9;]*m)?  Non-literal message id/m', $error);
+	}
+
+	public function testWritesNoDomainWhenOneIsInvalid(): void
+	{
+		$this->write('src/x.php', "<?php\n__('A');\n");
+		$valid = $this->write('i18n/app.de.php', "<?php return [];\n");
+		$this->write('i18n/other.de.php', "<?php return ['extends' => 'missing'];\n");
+		$other = new Domain('other', $this->tmpDir() . '/i18n', ['de'], []);
+
+		try {
+			(new SyncCommand([$this->domain(), $other]))(new Io(new Buffer()));
+			$this->fail('Invalid domain accepted');
+		} catch (UnexpectedValueException $e) {
+			$this->assertSame(
+				"Missing parent catalog '{$this->tmpDir()}/i18n/other.missing.php'",
+				$e->getMessage(),
+			);
+		}
+
+		$this->assertSame("<?php return [];\n", file_get_contents($valid));
 	}
 
 	public function testReturnsZero(): void

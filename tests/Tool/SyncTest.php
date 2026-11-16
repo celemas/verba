@@ -200,6 +200,38 @@ class SyncTest extends TestCase
 		$this->assertSame(0, $report->locales['de']['added']);
 	}
 
+	public function testAllReadsEveryDomainBeforeWritingAny(): void
+	{
+		$this->write('src/x.php', "<?php\n__d('a', 'New');\n__d('b', 'New');\n");
+		$valid = $this->write('i18n/a.en.php', "<?php return [];\n");
+		$broken = $this->write('i18n/b.en.php', "<?php return ['extends' => 'missing'];\n");
+		$scanners = [new PhpScanner([$this->tmpDir() . '/src'])];
+		$domains = [
+			new Domain('a', $this->tmpDir() . '/i18n', ['en'], $scanners),
+			new Domain('b', $this->tmpDir() . '/i18n', ['en'], $scanners),
+		];
+
+		try {
+			Sync::all($domains);
+			$this->fail('Broken chain accepted');
+		} catch (UnexpectedValueException $e) {
+			$this->assertSame("Missing parent catalog '{$this->tmpDir()}/i18n/b.missing.php'", $e->getMessage());
+		}
+
+		$this->assertSame("<?php return [];\n", file_get_contents($valid));
+
+		file_put_contents($broken, "<?php return ['obsolete' => ['Gone' => 'Weg']];\n");
+		$reports = Sync::all($domains);
+
+		$this->assertSame(['a', 'b'], array_map(static fn($report): string => $report->domain, $reports));
+		$this->assertSame(['New' => null], CatalogFile::load($valid)->messages);
+		$this->assertSame(['Gone' => 'Weg'], CatalogFile::load($broken)->obsolete);
+
+		Sync::all($domains, prune: true);
+
+		$this->assertSame([], CatalogFile::load($broken)->obsolete);
+	}
+
 	public function testPruneDropsObsolete(): void
 	{
 		$this->write('src/x.php', "<?php\n__('A');\n");
