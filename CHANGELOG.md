@@ -7,11 +7,15 @@
 - Catalogs can declare `'extends' => 'en_GB'` to inherit from one parent locale in the same domain. Parent chains precede runtime fallback locales, support contexts, and preserve the supplying catalog's plural rule. A variant without its own `plural` key uses the rule its nearest ancestor declares. Invalid parent IDs, missing parents, and cycles raise `UnexpectedValueException`.
 - `i18n:sync` preserves inheritance declarations and keeps variant catalogs sparse, removing untranslated placeholders covered by ancestors while retaining explicit overrides. Configured parents are synced before their children and created when their file is missing, and all chains are validated before writes.
 - `i18n:status` reports an `inherited` count separately from locally translated messages; inherited translations satisfy `--strict` and do not appear as gaps.
+- `Catalog` and `CatalogFile` expose the declared parent as an `$extends` property and accept it as an optional constructor argument.
+- `Catalog::inherit()` returns the catalog under the plural rule its parent declares or inherited. The optional `$declaresPlural` constructor argument marks a rule that is only the locale's default and yields to such a declaration.
+- `CatalogFile::covers()` and `Message::coveredBy()` tell whether a catalog or a single entry translates a source message.
 - `Sync::all()` syncs several domains, reading and validating all of them before the first catalog is written.
 - `Translator::exportMany()` includes inherited catalogs using the existing browser payload format. Single-catalog `export()` methods remain local-only; `Translator::export()` names the inherited plural rule.
 
 ### Changed
 
+- `Catalog::load()` and `CatalogFile::load()` throw an `UnexpectedValueException` when a catalog's `extends` key is not a locale ID. Before, the key was ignored.
 - Status command output includes an inherited count. Consumers of `StatusReport` receive an additional `inherited` key per locale.
 - `i18n:sync` reads and validates every domain before writing, so an invalid catalog in one domain no longer leaves earlier domains rewritten.
 - `i18n:status` and `i18n:sync` no longer count a plural list as covering a singular source call, matching runtime lookup behavior. Sync removes such a list from a variant when an ancestor translates the message.
