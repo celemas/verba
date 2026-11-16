@@ -28,7 +28,7 @@ final class CatalogFiles
 			$this->domain->name,
 			$this->domain->dir,
 			$locale,
-			fn(string $file, string $id): CatalogFile => $this->catalogs[$id] ??= CatalogFile::load($file),
+			fn(string $id): CatalogFile => $this->catalogs[$id] ??= CatalogFile::load($this->domain->file($id)),
 			$this->domain->locales,
 		);
 	}

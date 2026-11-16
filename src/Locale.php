@@ -19,4 +19,12 @@ final class Locale
 	{
 		return preg_match('/^[A-Za-z0-9_-]+$/D', $id) === 1;
 	}
+
+	/**
+	 * The catalog file of a domain for the locale.
+	 */
+	public static function file(string $dir, string $domain, string $id): string
+	{
+		return $dir . '/' . $domain . '.' . $id . '.php';
+	}
 }

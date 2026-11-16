@@ -26,7 +26,7 @@ final class Inheritance
 
 	/**
 	 * @template T of Catalog|CatalogFile
-	 * @param Closure(string, string): T $load
+	 * @param Closure(string): T $load Loads the catalog of a locale id.
 	 * @param list<string> $optional Parent locales that may lack a catalog file.
 	 * @return non-empty-array<array-key, T> Catalogs by locale id, starting with the given locale.
 	 */
@@ -40,7 +40,7 @@ final class Inheritance
 		$chain = [];
 
 		do {
-			$file = $dir . '/' . $domain . '.' . $locale . '.php';
+			$file = Locale::file($dir, $domain, $locale);
 
 			if (array_key_exists($locale, $chain)) {
 				throw new UnexpectedValueException("Catalog inheritance cycle in '{$file}'");
@@ -50,7 +50,7 @@ final class Inheritance
 				throw new UnexpectedValueException("Missing parent catalog '{$file}'");
 			}
 
-			$catalog = $load($file, $locale);
+			$catalog = $load($locale);
 			$chain[$locale] = $catalog;
 			$locale = $catalog->extends;
 		} while ($locale !== null);

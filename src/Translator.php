@@ -456,7 +456,7 @@ final class Translator
 			$domain,
 			$this->domains[$domain],
 			$locale,
-			fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
+			fn(string $id): Catalog => $this->catalog($domain, $id),
 		);
 		$parent = $chain[array_key_last($chain)];
 
@@ -471,7 +471,7 @@ final class Translator
 	private function catalog(string $domain, string $locale): Catalog
 	{
 		return $this->catalogs[$domain . "\0" . $locale] ??= Catalog::load(
-			$this->domains[$domain] . '/' . $domain . '.' . $locale . '.php',
+			Locale::file($this->domains[$domain], $domain, $locale),
 			$locale,
 		);
 	}

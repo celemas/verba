@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Celema\Verba\Tool;
 
+use Celema\Verba\Locale;
+
 /**
  * A translation domain: its catalog directory, the locales it maintains, and
  * the scanners that discover its messages. The default domain also receives
@@ -27,7 +29,7 @@ final class Domain
 
 	public function file(string $locale): string
 	{
-		return $this->dir . '/' . $this->name . '.' . $locale . '.php';
+		return Locale::file($this->dir, $this->name, $locale);
 	}
 
 	/**
