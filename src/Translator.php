@@ -221,9 +221,10 @@ final class Translator
 
 	/**
 	 * Canonical, JSON-ready catalog data for one domain at the primary locale:
-	 * the plural rule id and translated messages. Parents and fallback locales are not
-	 * consulted here — {@see self::exportMany()} ships the whole resolution
-	 * chain. Empty when the domain is not part of this translator's cascade.
+	 * the plural rule id it declares or inherits and its own translated
+	 * messages. Parent and fallback messages are not included —
+	 * {@see self::exportMany()} ships the whole resolution chain. Empty when
+	 * the domain is not part of this translator's cascade.
 	 *
 	 * @return array{
 	 *     plural: string,
@@ -237,7 +238,7 @@ final class Translator
 			return ['plural' => $this->locale, 'messages' => []];
 		}
 
-		return $this->catalog($domain, $this->locale)->export();
+		return $this->lineage($domain, $this->locale)[$this->locale]->export();
 	}
 
 	/**
@@ -434,12 +435,7 @@ final class Translator
 	{
 		foreach ($this->locales as $locale) {
 			$this->chains[$domain][$locale] ??= array_diff_key(
-				Inheritance::chain(
-					$domain,
-					$this->domains[$domain],
-					$locale,
-					fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
-				),
+				$this->lineage($domain, $locale),
 				...array_values($this->chains[$domain]),
 			);
 
@@ -447,6 +443,30 @@ final class Translator
 				yield $catalog;
 			}
 		}
+	}
+
+	/**
+	 * A locale's catalog and ancestors by locale id, each under the plural
+	 * rule it declares or inherits.
+	 *
+	 * @return non-empty-array<array-key, Catalog>
+	 */
+	private function lineage(string $domain, string $locale): array
+	{
+		$chain = Inheritance::chain(
+			$domain,
+			$this->domains[$domain],
+			$locale,
+			fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
+		);
+		$parent = $chain[array_key_last($chain)];
+
+		foreach (array_reverse(array_keys($chain)) as $id) {
+			$parent = $chain[$id]->inherit($parent);
+			$chain[$id] = $parent;
+		}
+
+		return $chain;
 	}
 
 	private function catalog(string $domain, string $locale): Catalog

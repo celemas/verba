@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
 	'extends' => 'en_GB',
+	'plural' => 'en_US',
 	'messages' => [
 		'Choose a colour' => 'Choose a color',
 		'Local forms' => ['local'],

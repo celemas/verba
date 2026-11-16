@@ -171,6 +171,67 @@ class InheritanceTest extends TestCase
 		$this->assertSame('Ihre Artikel', $t->translatePlural('one item', 'items', 0));
 	}
 
+	/** @return iterable<string, array{array<string, array<string, string>>, string, int, string, string}> */
+	public static function pluralRules(): iterable
+	{
+		yield 'parent declares' => [
+			['sr-formal' => ['extends' => 'sr'], 'sr' => ['plural' => 'ru']],
+			'sr-formal',
+			21,
+			'form 0',
+			'ru',
+		];
+		yield 'ancestor declares' => [
+			['a' => ['extends' => 'b'], 'b' => ['extends' => 'c'], 'c' => ['plural' => 'ru']],
+			'a',
+			21,
+			'form 0',
+			'ru',
+		];
+		yield 'nearest declaration wins' => [
+			['a' => ['extends' => 'b'], 'b' => ['extends' => 'c', 'plural' => 'pl'], 'c' => ['plural' => 'ru']],
+			'a',
+			21,
+			'form 2',
+			'pl',
+		];
+		yield 'own declaration wins' => [
+			['a' => ['extends' => 'b', 'plural' => 'en'], 'b' => ['plural' => 'ru']],
+			'a',
+			21,
+			'form 1',
+			'en',
+		];
+		yield 'no declaration' => [
+			['pt_BR' => ['extends' => 'pt'], 'pt' => []],
+			'pt_BR',
+			0,
+			'form 0',
+			'pt_BR',
+		];
+	}
+
+	/** @param array<string, array<string, string>> $catalogs */
+	#[DataProvider('pluralRules')]
+	public function testVariantUsesNearestDeclaredPluralRule(
+		array $catalogs,
+		string $locale,
+		int $n,
+		string $form,
+		string $rule,
+	): void {
+		foreach ($catalogs as $id => $catalog) {
+			$catalog['messages'] = ['item' => ['form 0', 'form 1', 'form 2']];
+			$this->write("app.{$id}.php", '<?php return ' . var_export($catalog, true) . ';');
+		}
+
+		$t = new Translator($locale, ['app' => $this->tmpDir()]);
+
+		$this->assertSame($form, $t->translatePlural('item', 'items', $n));
+		$this->assertSame($rule, $t->export('app')['plural']);
+		$this->assertSame($rule, $t->exportMany(['app'])['domains'][0]['plural']);
+	}
+
 	/** @return iterable<string, array{string}> */
 	public static function invalidParents(): iterable
 	{

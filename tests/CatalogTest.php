@@ -95,6 +95,24 @@ class CatalogTest extends TestCase
 		$this->assertSame(['always-A', 'B', 'C'], $catalog->get('k'));
 	}
 
+	public function testInheritsDeclaredPluralRuleUnlessItDeclaresOne(): void
+	{
+		$file = $this->write('app.sr.php', "<?php return ['messages' => ['item' => ['one', 'few', 'many']]];");
+		$declaring = new Catalog([], 'ru');
+		$inherited = Catalog::load($file, 'sr')->inherit($declaring);
+
+		$this->assertSame(2, $inherited->form(5));
+		$this->assertSame('ru', $inherited->export()['plural']);
+		$this->assertSame(['one', 'few', 'many'], $inherited->get('item'));
+		$this->assertSame(
+			'pl',
+			new Catalog([], 'pl')
+				->inherit($declaring)
+				->export()['plural'],
+		);
+		$this->assertSame('sr', Catalog::load($file, 'sr')->inherit(Catalog::load($file, 'ru'))->export()['plural']);
+	}
+
 	public function testExportDropsUntranslatedAndUsesLocaleRule(): void
 	{
 		$catalog = Catalog::load($this->i18n() . '/shop.de.php', 'de');

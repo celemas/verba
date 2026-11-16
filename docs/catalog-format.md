@@ -76,11 +76,11 @@ Missing entries, `null`, and empty plural lists fall through. An empty string is
 
 Both runtime and tooling reject invalid parent IDs, missing parent files, and inheritance cycles with `UnexpectedValueException`. The runtime reads and validates a locale's parent chain when a lookup first reaches that locale in a domain: the requested locale's chain on the first lookup, a fallback locale's chain only once the catalogs before it lack the message. `exportMany()` reads and validates the whole chain. A missing primary or runtime fallback catalog still behaves as an empty catalog; an explicitly declared parent must exist. Tooling makes one exception: a parent listed in the domain's configured `locales` may lack a file, because sync creates it. Until then sync and status read it as an empty catalog.
 
-`Catalog::load()` reads one file and exposes its `extends` property; it does not resolve parents itself. `CatalogFile::load()` likewise reads a single file for editing. `Translator` and the sync/status tooling resolve the chains.
+`Catalog::load()` reads one file and exposes its `extends` property; it does not resolve parents itself, so the loaded catalog uses its own plural rule until `Catalog::inherit()` applies a parent's. `CatalogFile::load()` likewise reads a single file for editing. `Translator` and the sync/status tooling resolve the chains.
 
 ### `plural`
 
-The optional `plural` string selects a built-in plural rule. It may be a locale such as `de` or another supported rule identifier. Without it, Verba derives the rule from the catalog locale in the filename.
+The optional `plural` string selects a built-in plural rule. It may be a locale such as `de` or another supported rule identifier. Without it, a catalog with `extends` uses the rule its nearest ancestor declares. When no ancestor declares one either, Verba derives the rule from the catalog locale in the filename, so `pt_BR` extending `pt` keeps the Brazilian rule.
 
 ### `messages`
 
@@ -250,7 +250,7 @@ The writer rewrites the complete file deterministically. Do not rely on manually
 - `messages`
 - optional `contexts`
 
-`Catalog::export()` and `Translator::export()` remain single-catalog exports: neither includes inherited translations or an `extends` field. Flattening parents into one plural rule would change translation behavior. Use `Translator::exportMany()` for the complete resolution chain; it expands both inheritance and runtime fallbacks into ordered entries with the existing payload shape and each supplying catalog's plural rule. The JavaScript runtime needs no parent lookup or inheritance configuration.
+`Catalog::export()` and `Translator::export()` remain single-catalog exports: neither includes inherited translations or an `extends` field. `Translator::export()` names the plural rule the catalog declares or inherits; `Catalog::export()` knows only its own file. Flattening parents into one plural rule would change translation behavior. Use `Translator::exportMany()` for the complete resolution chain; it expands both inheritance and runtime fallbacks into ordered entries with the existing payload shape and each supplying catalog's plural rule. The JavaScript runtime needs no parent lookup or inheritance configuration.
 
 All exports omit `null`, empty plural lists, and both obsolete sections. `Translator::exportMany()` also removes parent and fallback entries that can no longer be reached, tracking ordinary IDs and each `(context, ID)` pair independently. A locale-specific payload entry is removed only when both its ordinary and contextual maps are empty.
 

@@ -139,7 +139,7 @@ Lookups try `app.en_US.php`, then `app.en_GB.php` and any further ancestors, bef
 
 The same pattern supports German forms of address: use a complete informal `app.de.php` and a sparse `app.de-formal.php` with `'extends' => 'de'`. The variant uses German plural rules. Inherited wording is not checked for formality, so review every sentence that addresses the reader.
 
-Missing entries, `null`, and empty plural lists inherit; explicit translations override. Contexts remain independent, and inherited plurals use the supplying catalog's rule. Cycles, invalid parent locale IDs, and missing parent files raise `UnexpectedValueException`; only the tooling accepts a missing parent that is one of the domain's configured locales, since sync creates it.
+Missing entries, `null`, and empty plural lists inherit; explicit translations override. Contexts remain independent, and inherited plurals use the supplying catalog's rule. A variant without its own `plural` key uses the rule its nearest ancestor declares. Cycles, invalid parent locale IDs, and missing parent files raise `UnexpectedValueException`; only the tooling accepts a missing parent that is one of the domain's configured locales, since sync creates it.
 
 Sync preserves `extends` and omits placeholders covered by ancestors; status reports inherited translations separately and accepts them in `--strict` mode. `exportMany()` includes inheritance for the browser without a JavaScript runtime update. See the [catalog reference](docs/catalog-format.md#extends) for the full contract.
 

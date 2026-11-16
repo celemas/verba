@@ -20,12 +20,14 @@ final class Catalog
 	 * @param array<array-key, string|list<string>|null> $messages
 	 * @param string $pluralKey A locale or rule id resolved through {@see Plurals}.
 	 * @param array<array-key, array<array-key, string|list<string>|null>> $contexts
+	 * @param bool $declaresPlural False when $pluralKey is only the locale's default, which yields to an ancestor's rule.
 	 */
 	public function __construct(
 		private readonly array $messages,
 		private readonly string $pluralKey,
 		private readonly array $contexts = [],
 		public readonly ?string $extends = null,
+		private readonly bool $declaresPlural = true,
 	) {
 		$this->plural = Plurals::rule($pluralKey);
 	}
@@ -48,7 +50,22 @@ final class Catalog
 			self::readPluralKey($data['plural'] ?? null, $locale),
 			self::readContexts($data['contexts'] ?? null),
 			Inheritance::parent($data['extends'] ?? null, $file),
+			is_string($data['plural'] ?? null),
 		);
+	}
+
+	/**
+	 * This catalog under the plural rule that $parent declares or inherited.
+	 * It is returned unchanged when it declares `plural` itself or $parent
+	 * has no declaration to pass on.
+	 */
+	public function inherit(self $parent): self
+	{
+		if ($this->declaresPlural || !$parent->declaresPlural) {
+			return $this;
+		}
+
+		return new self($this->messages, $parent->pluralKey, $this->contexts, $this->extends);
 	}
 
 	/**
