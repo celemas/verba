@@ -153,10 +153,9 @@ final class Sync
 
 		foreach ($fresh as $id => $message) {
 			$entry = array_key_exists($id, $messages) ? $messages[$id] : $obsolete[$id] ?? null;
-			$untranslated = $entry === null || $entry === [];
 
 			if (
-				$untranslated
+				!$message->coveredBy($entry)
 				&& array_any($parents, static fn(CatalogFile $parent): bool => $parent->covers($message))
 			) {
 				continue;

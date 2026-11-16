@@ -12,7 +12,7 @@
 ### Changed
 
 - Status command output includes an inherited count. Consumers of `StatusReport` receive an additional `inherited` key per locale.
-- `i18n:status` no longer counts a plural list as covering a singular source call, matching runtime lookup behavior.
+- `i18n:status` and `i18n:sync` no longer count a plural list as covering a singular source call, matching runtime lookup behavior. Sync removes such a list from a variant when an ancestor translates the message.
 
 ### Fixed
 

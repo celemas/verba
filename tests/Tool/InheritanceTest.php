@@ -130,6 +130,30 @@ __p('0', '404');
 		}
 	}
 
+	public function testSyncAndStatusAgreeOnPluralListsForSingularMessages(): void
+	{
+		$this->write('src/x.php', "<?php __('Covered'); __('Uncovered'); __('Parked');");
+		$this->catalog('en', new CatalogFile(['Covered' => 'Base', 'Uncovered' => null, 'Parked' => 'Base'], [], null));
+		$file = $this->catalog(
+			'en_US',
+			new CatalogFile(
+				['Covered' => ['one', 'many'], 'Uncovered' => ['one', 'many']],
+				['Parked' => ['one', 'many']],
+				null,
+				extends: 'en',
+			),
+		);
+		$domain = $this->domain(['en', 'en_US']);
+
+		new Sync($domain)->run();
+
+		$this->assertSame(['Uncovered' => ['one', 'many']], CatalogFile::load($file)->messages);
+		$this->assertSame([], CatalogFile::load($file)->obsolete);
+		$this->assertSame(2, new Status($domain)->run()->locales['en_US']['inherited']);
+		$this->assertSame(1, new Status($domain)->run()->locales['en_US']['untranslated']);
+		$this->assertFalse(new Sync($domain)->run()->locales['en_US']['changed']);
+	}
+
 	public function testSyncReadsEachCatalogOnce(): void
 	{
 		$this->write('src/x.php', "<?php __('Save');");

@@ -22,4 +22,16 @@ final class Message
 		public readonly array $locations,
 		public readonly ?string $context = null,
 	) {}
+
+	/**
+	 * Whether a catalog entry translates this message. A string always does;
+	 * a plural list only translates a plural message, because singular
+	 * lookups skip lists.
+	 *
+	 * @param string|list<string>|null $entry
+	 */
+	public function coveredBy(string|array|null $entry): bool
+	{
+		return is_string($entry) || $this->plural !== null && is_array($entry) && $entry !== [];
+	}
 }

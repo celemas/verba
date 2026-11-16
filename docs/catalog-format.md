@@ -234,7 +234,7 @@ All messages could live under one context map using a reserved key such as `defa
 5. Sorts context names and message IDs with bytewise string ordering.
 6. Omits empty `contexts`, `obsolete`, and `obsolete_contexts` sections.
 
-For catalogs with `extends`, sync preserves the declaration and keeps the variant sparse. A source message translated by an ancestor needs no local placeholder; existing `null` and empty-list placeholders covered by ancestors are removed. Uncovered messages still receive placeholders. Explicit local translations remain, even when identical to a parent, and returning obsolete translations are restored before considering inheritance. Obsolete parent entries do not count as translations.
+For catalogs with `extends`, sync preserves the declaration and keeps the variant sparse. A source message translated by an ancestor needs no local placeholder; existing `null` and empty-list placeholders covered by ancestors are removed, as is a plural list under a singular source call, which translates nothing. Uncovered messages still receive placeholders. Explicit local translations remain, even when identical to a parent, and returning obsolete translations are restored before considering inheritance. Obsolete parent entries do not count as translations.
 
 Sync validates every configured locale's chain before writing files, then processes configured parents before children regardless of locale order. A configured parent without a file is created like any other configured locale. Parents outside the domain's configured `locales` are read and validated, but never rewritten. Sync's `total` counts the variant's local active entries, not inherited ones.
 

@@ -55,9 +55,8 @@ final class CatalogFile
 	public function covers(Message $message): bool
 	{
 		$messages = $message->context === null ? $this->messages : $this->contexts[$message->context] ?? [];
-		$entry = $messages[$message->id] ?? null;
 
-		return is_string($entry) || $message->plural !== null && is_array($entry) && $entry !== [];
+		return $message->coveredBy($messages[$message->id] ?? null);
 	}
 
 	private static function pluralKey(mixed $plural): ?string

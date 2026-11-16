@@ -115,8 +115,7 @@ final class Status
 		$locations = [];
 
 		foreach ($fresh as $id => $message) {
-			$entry = $messages[$id] ?? null;
-			$covered = is_string($entry) || $message->plural !== null && is_array($entry) && $entry !== [];
+			$covered = $message->coveredBy($messages[$id] ?? null);
 
 			if (!$covered && array_any($parents, static fn(CatalogFile $parent): bool => $parent->covers($message))) {
 				$inherited++;
