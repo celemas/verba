@@ -31,6 +31,10 @@
 				'Celema\\Verba\\Verba::current',
 			],
 		},
+		// The cycle guard only tests whether a locale is a key; its value is never read.
+		TrueValue: {
+			ignore: ['Celema\\Verba\\Inheritance::chain'],
+		},
 		// Duplicate fallback locales or context names only repeat identical
 		// lookups, and the locale list is never read by index.
 		UnwrapArrayUnique: {
@@ -53,6 +57,8 @@
 			ignore: [
 				'Celema\\Verba\\Tool\\PhpScanner::arguments',
 				'Celema\\Verba\\Tool\\JavascriptScanner::arguments',
+				// Memoization: without the early return, the same chain is rebuilt.
+				'Celema\\Verba\\Translator::chain',
 			],
 		},
 		// Literal segments are always balanced, so the loop never reads past
