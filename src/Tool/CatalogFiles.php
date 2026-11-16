@@ -21,7 +21,7 @@ final class CatalogFiles
 		private readonly Domain $domain,
 	) {}
 
-	/** @return non-empty-list<CatalogFile> */
+	/** @return non-empty-array<array-key, CatalogFile> */
 	public function chain(string $locale): array
 	{
 		return Inheritance::chain(

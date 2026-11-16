@@ -96,7 +96,7 @@ final class Status
 	/**
 	 * @param array<array-key, Message> $fresh
 	 * @param array<array-key, string|list<string>|null> $messages
-	 * @param list<CatalogFile> $parents
+	 * @param array<array-key, CatalogFile> $parents
 	 * @return array{
 	 *     missing: int,
 	 *     untranslated: int,

@@ -32,11 +32,12 @@ final class Translator
 	private array $catalogs = [];
 
 	/**
-	 * Per domain, the catalog and ancestors of each locale a lookup has reached.
+	 * Per domain, the catalogs that each locale a lookup has reached adds to
+	 * the lookup order, by locale id.
 	 *
-	 * @var array<string, array<array-key, non-empty-list<Catalog>>>
+	 * @var array<string, array<array-key, array<array-key, Catalog>>>
 	 */
-	private array $chains = [];
+	private array $chains;
 
 	/**
 	 * Locale ids may contain only ASCII letters, digits, hyphens, and underscores.
@@ -50,6 +51,7 @@ final class Translator
 		array $fallback = [],
 	) {
 		$this->order = array_keys($domains);
+		$this->chains = array_fill_keys($this->order, []);
 		$this->locales = array_values(array_unique([$locale, ...$fallback]));
 
 		foreach ($this->locales as $localeId) {
@@ -431,11 +433,14 @@ final class Translator
 	private function chain(string $domain): Generator
 	{
 		foreach ($this->locales as $locale) {
-			$this->chains[$domain][$locale] ??= Inheritance::chain(
-				$domain,
-				$this->domains[$domain],
-				$locale,
-				fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
+			$this->chains[$domain][$locale] ??= array_diff_key(
+				Inheritance::chain(
+					$domain,
+					$this->domains[$domain],
+					$locale,
+					fn(string $_file, string $id): Catalog => $this->catalog($domain, $id),
+				),
+				...array_values($this->chains[$domain]),
 			);
 
 			foreach ($this->chains[$domain][$locale] as $catalog) {

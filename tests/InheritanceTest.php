@@ -91,6 +91,30 @@ class InheritanceTest extends TestCase
 		);
 	}
 
+	public function testOverlappingChainsKeepLookupOrder(): void
+	{
+		$this->write('app.en_US.php', "<?php return ['extends' => 'en'];");
+		$this->write('app.en.php', "<?php return ['messages' => ['A' => 'parent']];");
+		$this->write(
+			'app.en_GB.php',
+			"<?php return ['extends' => 'en', 'messages' => ['A' => 'fallback', 'B' => 'fallback']];",
+		);
+		$t = new Translator('en_US', ['app' => $this->tmpDir()], ['en', 'en_GB']);
+
+		$this->assertSame('parent', $t->translate('A'));
+		$this->assertSame('fallback', $t->translate('B'));
+		$this->assertSame('C', $t->translate('C'));
+		$this->assertSame('parent', $t->translate('A'));
+		$this->assertSame(
+			[
+				['domain' => 'app', 'plural' => 'en_US', 'messages' => []],
+				['domain' => 'app', 'plural' => 'en', 'messages' => ['A' => 'parent']],
+				['domain' => 'app', 'plural' => 'en_GB', 'messages' => ['B' => 'fallback']],
+			],
+			$t->exportMany(['app'])['domains'],
+		);
+	}
+
 	public function testFallbackChainsLoadOnlyWhenReached(): void
 	{
 		$this->write('app.de.php', "<?php return ['messages' => ['A' => 'primary']];");

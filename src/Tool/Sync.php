@@ -143,7 +143,7 @@ final class Sync
 	 * @param array<array-key, Message> $fresh
 	 * @param array<array-key, string|list<string>|null> $messages
 	 * @param array<array-key, string|list<string>|null> $obsolete
-	 * @param list<CatalogFile> $parents
+	 * @param array<array-key, CatalogFile> $parents
 	 * @return array{messages: array<array-key, string|list<string>|null>, added: int}
 	 */
 	private function reconcileSection(array $fresh, array $messages, array $obsolete, array $parents): array

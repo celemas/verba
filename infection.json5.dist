@@ -28,13 +28,12 @@
 		AssignCoalesce: {
 			ignore: [
 				'Celema\\Verba\\Translator::catalog',
-				'Celema\\Verba\\Translator::chain',
 				'Celema\\Verba\\Verba::current',
 			],
 		},
-		// The cycle guard only tests whether a locale is a key; its value is never read.
-		TrueValue: {
-			ignore: ['Celema\\Verba\\Inheritance::chain'],
+		// A catalog listed twice in a lookup chain only repeats identical lookups.
+		UnwrapArrayDiffKey: {
+			ignore: ['Celema\\Verba\\Translator::chain'],
 		},
 		// Duplicate fallback locales or context names only repeat identical
 		// lookups, and the locale list is never read by index.
